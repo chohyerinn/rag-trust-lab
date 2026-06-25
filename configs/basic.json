@@ -1,0 +1,9 @@
+{
+  "docs": "data/docs",
+  "questions": "data/questions.json",
+  "retriever": "lexical",
+  "trust_mode": "all",
+  "generator": "mock",
+  "chunk_size": 650,
+  "k": 3
+}

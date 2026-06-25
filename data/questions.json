@@ -1,0 +1,45 @@
+[
+  {
+    "id": "q_refund_window",
+    "question": "환불은 결제 후 며칠 안에 요청할 수 있나요?",
+    "gold_sources": ["current_policy"],
+    "expected_terms": ["7일"],
+    "category": "policy"
+  },
+  {
+    "id": "q_refund_quota",
+    "question": "월 사용량이 50% 이상이면 환불이 가능한가요?",
+    "gold_sources": ["current_policy"],
+    "expected_terms": ["50%", "제한"],
+    "category": "condition"
+  },
+  {
+    "id": "q_free_upload",
+    "question": "무료 플랜에서 파일 업로드를 할 수 있나요?",
+    "gold_sources": ["current_policy"],
+    "expected_terms": ["무료", "지원되지"],
+    "category": "plan"
+  },
+  {
+    "id": "q_pro_upload",
+    "question": "Pro 플랜의 파일 업로드 한도는 얼마인가요?",
+    "gold_sources": ["current_policy"],
+    "expected_terms": ["1,000"],
+    "category": "plan"
+  },
+  {
+    "id": "q_pii_masking",
+    "question": "고객 개인정보는 저장 전에 어떻게 처리해야 하나요?",
+    "gold_sources": ["current_policy"],
+    "expected_terms": ["마스킹"],
+    "category": "privacy"
+  },
+  {
+    "id": "q_unknown_phone",
+    "question": "전화 상담 운영 시간은 언제인가요?",
+    "gold_sources": ["current_policy"],
+    "expected_terms": ["확인할 수 없습니다"],
+    "category": "unknown",
+    "should_refuse": true
+  }
+]
