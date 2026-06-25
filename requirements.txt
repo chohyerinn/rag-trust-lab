@@ -1,0 +1,10 @@
+pytest>=8
+
+# Optional real RAG stack.
+# The project runs with the built-in lexical retriever and mock generator,
+# but these enable the LangChain + Chroma + LiteLLM path.
+langchain>=0.2
+langchain-community>=0.2
+langchain-chroma>=0.1
+chromadb>=0.5
+litellm>=1.40

@@ -1,0 +1,9 @@
+{
+  "docs": "data/docs",
+  "questions": "data/questions.json",
+  "retriever": "chroma",
+  "trust_mode": "trusted-only",
+  "generator": "mock",
+  "chunk_size": 650,
+  "k": 3
+}
