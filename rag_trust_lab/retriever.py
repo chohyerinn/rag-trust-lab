@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import math
+import os
 import re
+import urllib.request
 from collections import Counter
 from pathlib import Path
 from typing import Iterable
@@ -10,6 +13,9 @@ from typing import Iterable
 from .models import Chunk
 
 TOKEN_RE = re.compile(r"[A-Za-z0-9가-힣]+")
+
+# CLOVA Studio의 OpenAI 호환 베이스(생성 어댑터와 동일). 임베딩은 /embeddings.
+CLOVA_BASE_URL = os.environ.get("CLOVA_BASE_URL", "https://clovastudio.stream.ntruss.com/v1/openai")
 
 
 def tokenize(text: str) -> list[str]:
@@ -159,6 +165,94 @@ class ChromaRetriever:
         return out
 
 
+def _cosine(a: list[float], b: list[float]) -> float:
+    dot = sum(x * y for x, y in zip(a, b))
+    na = math.sqrt(sum(x * x for x in a)) or 1.0
+    nb = math.sqrt(sum(y * y for y in b)) or 1.0
+    return dot / (na * nb)
+
+
+class DenseRetriever:
+    """CLOVA bge-m3 임베딩 기반 의미(dense) 검색.
+
+    문서와 질문을 임베딩해 코사인 유사도로 랭킹한다. BM25 같은 sparse 검색이
+    단어가 정확히 겹쳐야 잡는 반면, dense는 표현이 달라도(동의어·패러프레이즈)
+    의미가 가까우면 잡는다. CLOVA Studio의 OpenAI 호환 embeddings 엔드포인트를
+    쓴다(생성 어댑터와 같은 키). 문서 임베딩은 생성 시 한 번만 계산해 캐시한다.
+    """
+
+    def __init__(self, chunks: list[Chunk], trust_mode: str = "all", model: str | None = None):
+        self.chunks = [c for c in chunks if trust_mode != "trusted-only" or c.trusted]
+        self.model = model or os.environ.get("CLOVA_EMBED_MODEL", "bge-m3")
+        self.endpoint = CLOVA_BASE_URL.rstrip("/") + "/embeddings"
+        self._key = os.environ.get("CLOVASTUDIO_API_KEY") or os.environ.get("CLOVA_API_KEY")
+        self._doc_vecs = [self._embed(c.text + " " + c.title) for c in self.chunks]
+
+    def _embed(self, text: str) -> list[float]:
+        if not self._key:
+            raise RuntimeError(
+                "CLOVA API key가 없습니다. CLOVASTUDIO_API_KEY를 설정하세요. "
+                "(키 없이 돌리려면 retriever를 'lexical'/'bm25'로 쓰세요.)"
+            )
+        body = json.dumps({"model": self.model, "input": text}).encode("utf-8")
+        req = urllib.request.Request(
+            self.endpoint,
+            data=body,
+            headers={"Authorization": f"Bearer {self._key}", "Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        return data["data"][0]["embedding"]
+
+    def search(self, query: str, k: int = 3) -> list[Chunk]:
+        qv = self._embed(query)
+        scored = [(_cosine(qv, dv), c) for c, dv in zip(self.chunks, self._doc_vecs)]
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return [
+            Chunk(**{**c.__dict__, "rank": idx, "score": round(s, 4)})
+            for idx, (s, c) in enumerate(scored[:k], start=1)
+        ]
+
+
+def reciprocal_rank_fusion(rankings: list[list[Chunk]], rrf_k: int = 60, k: int = 3) -> list[Chunk]:
+    """여러 검색 결과를 Reciprocal Rank Fusion으로 합친다.
+
+    score(d) = Σ_retriever 1/(rrf_k + rank_retriever(d)). 점수 스케일이 서로 다른
+    검색(BM25 점수 vs 코사인 유사도)을 *순위*만으로 안전하게 결합한다.
+    """
+    scores: dict[str, float] = {}
+    obj: dict[str, Chunk] = {}
+    for ranked in rankings:
+        for rank, c in enumerate(ranked, start=1):
+            scores[c.id] = scores.get(c.id, 0.0) + 1.0 / (rrf_k + rank)
+            obj[c.id] = c
+    fused = sorted(obj.values(), key=lambda c: scores[c.id], reverse=True)
+    return [
+        Chunk(**{**c.__dict__, "rank": idx, "score": round(scores[c.id], 6)})
+        for idx, c in enumerate(fused[:k], start=1)
+    ]
+
+
+class HybridRetriever:
+    """BM25(sparse) + dense(semantic)를 RRF로 결합한 하이브리드 검색.
+
+    단어 정확매칭(BM25)과 의미유사(dense)의 장점을 합친다. 각 검색에서
+    `candidates`개를 뽑아 RRF로 재순위한 뒤 상위 k개를 돌려준다.
+    """
+
+    def __init__(self, chunks: list[Chunk], trust_mode: str = "all", rrf_k: int = 60, candidates: int = 20):
+        self.bm25 = BM25Retriever(chunks, trust_mode)
+        self.dense = DenseRetriever(chunks, trust_mode)
+        self.rrf_k = rrf_k
+        self.candidates = candidates
+
+    def search(self, query: str, k: int = 3) -> list[Chunk]:
+        a = self.bm25.search(query, k=self.candidates)
+        b = self.dense.search(query, k=self.candidates)
+        return reciprocal_rank_fusion([a, b], rrf_k=self.rrf_k, k=k)
+
+
 def build_retriever(
     kind: str,
     chunks: list[Chunk],
@@ -167,6 +261,10 @@ def build_retriever(
 ):
     if kind == "bm25":
         return BM25Retriever(chunks, trust_mode)
+    if kind == "dense":
+        return DenseRetriever(chunks, trust_mode)
+    if kind == "hybrid":
+        return HybridRetriever(chunks, trust_mode)
     if kind == "chroma":
         try:
             return ChromaRetriever(chunks, persist_dir or Path(".chroma"), trust_mode)
