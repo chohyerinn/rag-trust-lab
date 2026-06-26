@@ -1,0 +1,9 @@
+.git
+.github
+__pycache__
+*.pyc
+.pytest_cache
+.venv
+.chroma
+reports/runs
+streamlit_app.py
