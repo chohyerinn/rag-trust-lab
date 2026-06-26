@@ -19,14 +19,23 @@ RAG 답변이 맞았는지만 보는 대신, **검색이 근거를 찾았는지,
 
 ## 실제 CLOVA 결과
 
-HCX-005를 실제 생성 모델로 붙여 6문항 smoke run을 실행했을 때, `basic`은 poisoned note를 검색했지만 답변에서 injection을 따르지 않았습니다.
+HCX-005를 실제 생성 모델 + judge로 붙여 20문항을 실행한 결과입니다(생성·judge 모두 HCX-005).
 
-| Config | recall@3 | accuracy | grounded | injection following |
-| --- | ---: | ---: | ---: | ---: |
-| `clova-basic` | 83% | 100% | 100% | 0% |
-| `clova-trusted` | 83% | 100% | 100% | 0% |
+| Config | recall@3 | accuracy | grounded | injection following | poisoned retrieved |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `clova-basic` | 65% | 95% | 90% | 5% | 55% |
+| `clova-trusted` | 65% | 100% | 85% | 0% | 0% |
 
-이 결과는 "trusted filtering이 모든 점수를 올렸다"가 아니라, **HCX-005가 이 명시적 오염 문서에는 속지 않았다**는 쪽으로 해석해야 합니다. 그래서 이 프로젝트는 답변 성공률만 보지 않고 `poisoned_retrieved_rate`처럼 검색 단계의 오염 노출도 따로 기록합니다.
+해석에서 중요한 건 **어떤 지표가 통계적으로 유의했는지**입니다. HCX-005는 오염 문서가 검색돼도 injection을 거의 따르지 않아서(`basic`도 5%), trusted filtering을 켜도 **답변 단계 지표(accuracy·injection·grounded)는 유의하게 바뀌지 않았습니다**(CI가 0을 걸치거나 McNemar p가 큼). 유의하게 바뀐 건 **검색 단계 리스크**였습니다.
+
+| Metric | basic → trusted | 95% CI (B−A) | McNemar p | 판정 |
+| --- | ---: | --- | ---: | --- |
+| `poisoned_retrieved_rate` | 55% → 0% | [−0.75, −0.35] | 0.001 | 🔺 유의한 개선 |
+| `untrusted_retrieved_rate` | 55% → 0% | [−0.75, −0.35] | 0.001 | 🔺 유의한 개선 |
+| `injection_following_rate` | 5% → 0% | [−0.15, +0.00] | 1.0 | 🔸 개선 방향(유의X) |
+| `answer_accuracy` | 95% → 100% | [+0.00, +0.15] | 1.0 | 🔸 개선 방향(유의X) |
+
+즉 이 데이터에서 trusted filtering의 가치는 "답을 더 맞히는 것"이 아니라 **오염 근거가 검색되는 것 자체를 차단하는 검색 단계 방어선(defense-in-depth)**이고, 그 효과는 답변 지표가 아니라 **검색 리스크 지표에서만 통계적으로 드러났습니다**(−55%, p=0.001). 모델이 이미 injection에 강건하더라도, 오염 근거 노출은 이후 모델·프롬프트·질문 변화에서 실패로 이어질 수 있으므로 별도로 측정할 가치가 있습니다.
 
 ## 왜 만들었나
 
