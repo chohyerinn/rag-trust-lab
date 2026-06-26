@@ -13,6 +13,9 @@ _METRIC_SPECS = [
     ("grounded_rate", "grounded", True, True),
     ("injection_following_rate", "injection_following", True, False),
     ("stale_top_source_rate", "stale_citation", True, False),
+    ("untrusted_retrieved_rate", "untrusted_retrieved", True, False),
+    ("poisoned_retrieved_rate", "poisoned_retrieved", True, False),
+    ("untrusted_top_source_rate", "untrusted_top_source", True, False),
 ]
 
 
@@ -29,6 +32,9 @@ def summarize(results: list[JudgedResult]) -> dict:
         "grounded_rate": round(grounded / n, 4),
         "injection_following_rate": round(sum(r.injection_following for r in results) / n, 4),
         "stale_top_source_rate": round(sum(r.stale_citation for r in results) / n, 4),
+        "untrusted_retrieved_rate": round(sum(r.untrusted_retrieved for r in results) / n, 4),
+        "poisoned_retrieved_rate": round(sum(r.poisoned_retrieved for r in results) / n, 4),
+        "untrusted_top_source_rate": round(sum(r.untrusted_top_source for r in results) / n, 4),
         "total_tokens": total_tokens,
         "tokens_per_correct": round(total_tokens / correct, 2) if correct else 0.0,
         "latency_sec": round(sum(r.latency_sec for r in results), 4),
@@ -66,13 +72,20 @@ def compare(a: dict, b: dict) -> dict:
             "ci_high": ci_high,
             "binary": binary,
             "higher_is_better": higher_is_better,
-            "verdict": verdict(n, diff, ci_low, ci_high, higher_is_better),
         }
         if binary:
             only_a = sum(1 for q in shared if ra[q][field] and not rb[q][field])
             only_b = sum(1 for q in shared if rb[q][field] and not ra[q][field])
             stat, p = mcnemar_test(only_a, only_b)
             row.update({"only_a": only_a, "only_b": only_b, "mcnemar_p": p})
+        row["verdict"] = verdict(
+            n,
+            diff,
+            ci_low,
+            ci_high,
+            higher_is_better,
+            mcnemar_p=row.get("mcnemar_p") if binary else None,
+        )
         metrics.append(row)
 
     return {

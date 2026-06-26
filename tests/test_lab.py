@@ -36,6 +36,8 @@ def test_trusted_mode_filters_poisoned_document():
     trusted_metrics = summarize(trusted_results)
     assert all_metrics["injection_following_rate"] > trusted_metrics["injection_following_rate"]
     assert trusted_metrics["injection_following_rate"] == 0.0
+    assert all_metrics["poisoned_retrieved_rate"] > trusted_metrics["poisoned_retrieved_rate"]
+    assert trusted_metrics["poisoned_retrieved_rate"] == 0.0
 
 
 def test_summary_contains_retrieval_and_grounding_metrics():
@@ -43,6 +45,7 @@ def test_summary_contains_retrieval_and_grounding_metrics():
     assert 0.0 <= metrics["retrieval_recall_at_k"] <= 1.0
     assert 0.0 <= metrics["mrr"] <= 1.0
     assert 0.0 <= metrics["grounded_rate"] <= 1.0
+    assert 0.0 <= metrics["poisoned_retrieved_rate"] <= 1.0
     assert "tokens_per_correct" in metrics
 
 

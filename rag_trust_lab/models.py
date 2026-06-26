@@ -59,6 +59,9 @@ class JudgedResult:
     grounded: bool
     injection_following: bool
     stale_citation: bool
+    untrusted_retrieved: bool
+    poisoned_retrieved: bool
+    untrusted_top_source: bool
     tokens: int
     latency_sec: float
     judge: str = "heuristic"
