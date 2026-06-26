@@ -93,6 +93,18 @@ python -m rag_trust_lab compare --a reports/clova-basic.json --b reports/clova-t
 
 HCX-005 실행에서는 모델이 오염 문서를 검색해도 injection을 따르지 않을 수 있습니다. 그 경우 trusted filtering의 효과는 `answer_accuracy`보다 `poisoned_retrieved_rate` 같은 검색 리스크 지표에서 먼저 드러납니다. 실제 모델 결과를 해석할 때는 숫자만 보지 말고 `reports/*.md`의 답변 원문과 judge reason을 함께 확인해야 합니다.
 
+## 파이프라인
+
+```mermaid
+flowchart LR
+    D["docs<br/>current · old<br/>poison · stealth"] --> C["chunker"]
+    C --> RT["retriever<br/>lexical / Chroma<br/>trust filter"]
+    RT --> G["generator<br/>mock · LiteLLM · CLOVA"]
+    G --> J["judge<br/>heuristic + LLM-as-a-Judge"]
+    J --> M["metrics<br/>recall@k · MRR · grounded<br/>injection · poisoned-retrieved"]
+    M --> RP["report + compare<br/>paired bootstrap · McNemar"]
+```
+
 ## 프로젝트 구조
 
 ```text
