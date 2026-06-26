@@ -1,0 +1,8 @@
+# Render Blueprint — Docker 기반 웹 서비스.
+# render.com에서 이 repo를 연결하면 이 설정대로 컨테이너를 빌드·배포한다.
+services:
+  - type: web
+    name: rag-trust-lab
+    runtime: docker
+    plan: free
+    healthCheckPath: /health

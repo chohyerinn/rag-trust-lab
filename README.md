@@ -17,15 +17,26 @@ RAG 답변이 맞았는지만 보는 대신, **검색이 근거를 찾았는지,
 - CLOVA LLM-as-a-Judge 옵션과 휴리스틱 judge 일치율
 - 설정 A/B 회귀 비교 — **페어드 부트스트랩 CI + McNemar 검정**으로 유의성까지 판정 (`mini-agent-harness`와 동일 평가 방법론)
 
-## 데모
+## 데모 / 배포
 
-<!-- 배포 후 아래에 live URL을 넣으세요: [▶ live demo](https://...streamlit.app) -->
+<!-- 배포 후 아래에 live URL을 넣으세요: [▶ live API](https://rag-trust-lab.onrender.com/docs) -->
 
-질문을 넣으면 검색된 근거(신뢰/오염 표시)·답변·신뢰성 판정을 한 화면에서 봅니다. 사이드바의 `trust_mode`를 `all` → `trusted-only`로 바꾸면 **오염 문서가 검색 단계에서 사라지는 것**을 눈으로 확인할 수 있습니다. API 키 없이 lexical retriever + mock generator로 동작합니다.
+질문을 보내면 검색된 근거(신뢰/오염 표시)·답변·신뢰성 판정을 돌려줍니다. `trust_mode`를 `all` → `trusted-only`로 바꾸면 **오염 문서가 검색 단계에서 사라지는 것**을 확인할 수 있습니다. API 키 없이 lexical retriever + mock generator로 동작하므로 컨테이너로 그대로 배포됩니다.
 
-```powershell
-pip install -r requirements.txt
-streamlit run streamlit_app.py
+**REST API (FastAPI, Docker로 배포)**
+
+```bash
+docker build -t rag-trust-lab .
+docker run -p 8000:8000 rag-trust-lab
+# http://localhost:8000/docs  (Swagger UI에서 POST /query 바로 실행)
+```
+
+`render.yaml`이 있어 Render에 repo를 연결하면 Docker 컨테이너로 자동 빌드·배포됩니다. 헬스체크는 `/health`.
+
+**로컬 시각 데모 (Streamlit, 선택)**
+
+```bash
+pip install streamlit && streamlit run streamlit_app.py
 ```
 
 ## 실제 CLOVA 결과
