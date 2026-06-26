@@ -48,6 +48,46 @@ class LexicalRetriever:
         ]
 
 
+class BM25Retriever:
+    """Okapi BM25 retriever (표준 sparse 검색 baseline).
+
+    `LexicalRetriever`(단순 TF-IDF)와 달리 문서 길이 정규화(`b`)와 tf 포화(`k1`)를
+    적용한다. 긴 문서나 같은 단어 반복에 점수가 쏠리는 것을 줄여, 실제 검색
+    품질이 더 좋다. 외부 의존성 없이 동작한다.
+    """
+
+    def __init__(self, chunks: list[Chunk], trust_mode: str = "all", k1: float = 1.5, b: float = 0.75):
+        self.chunks = [c for c in chunks if trust_mode != "trusted-only" or c.trusted]
+        self.k1, self.b = k1, b
+        self._docs = [Counter(tokenize(c.text + " " + c.title)) for c in self.chunks]
+        self._lens = [sum(d.values()) for d in self._docs]
+        self.avgdl = (sum(self._lens) / len(self._lens)) if self._lens else 1.0
+        n = max(1, len(self.chunks))
+        self._idf = {
+            t: math.log(1 + (n - dfi + 0.5) / (dfi + 0.5))
+            for t, dfi in _doc_freq(self.chunks).items()
+        }
+
+    def search(self, query: str, k: int = 3) -> list[Chunk]:
+        q_terms = tokenize(query)
+        scored: list[tuple[float, Chunk]] = []
+        for chunk, doc, dl in zip(self.chunks, self._docs, self._lens):
+            score = 0.0
+            for term in q_terms:
+                tf = doc.get(term, 0)
+                if not tf:
+                    continue
+                denom = tf + self.k1 * (1 - self.b + self.b * dl / (self.avgdl or 1))
+                score += self._idf.get(term, 0.0) * (tf * (self.k1 + 1)) / denom
+            if score > 0:
+                scored.append((score, chunk))
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return [
+            Chunk(**{**chunk.__dict__, "rank": idx, "score": round(score, 4)})
+            for idx, (score, chunk) in enumerate(scored[:k], start=1)
+        ]
+
+
 class HashEmbeddings:
     """Small local embedding function compatible with LangChain/Chroma."""
 
@@ -125,6 +165,8 @@ def build_retriever(
     trust_mode: str = "all",
     persist_dir: Path | None = None,
 ):
+    if kind == "bm25":
+        return BM25Retriever(chunks, trust_mode)
     if kind == "chroma":
         try:
             return ChromaRetriever(chunks, persist_dir or Path(".chroma"), trust_mode)
