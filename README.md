@@ -19,7 +19,7 @@ RAG 답변이 맞았는지만 보는 대신, **검색이 근거를 찾았는지,
 
 ## 데모 / 배포
 
-<!-- 배포 후 아래에 live URL을 넣으세요: [▶ live API](https://rag-trust-lab.onrender.com/docs) -->
+**▶ 라이브 API:** [rag-trust-lab.onrender.com/docs](https://rag-trust-lab.onrender.com/docs) — Docker + FastAPI를 Render에 배포 (free tier라 첫 요청은 ~50초 cold start)
 
 질문을 보내면 검색된 근거(신뢰/오염 표시)·답변·신뢰성 판정을 돌려줍니다. `trust_mode`를 `all` → `trusted-only`로 바꾸면 **오염 문서가 검색 단계에서 사라지는 것**을 확인할 수 있습니다. API 키 없이 lexical retriever + mock generator로 동작하므로 컨테이너로 그대로 배포됩니다.
 
