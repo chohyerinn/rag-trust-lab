@@ -32,11 +32,12 @@ def run(args: argparse.Namespace) -> None:
         persist_dir=ROOT / ".chroma" / config_path.stem,
     )
     k = int(config.get("k", 3))
+    judge = config.get("judge", "heuristic")
     results = []
     for question in questions:
         retrieved = retriever.search(question.question, k=k)
         answer = answer_question(question, retrieved, config.get("generator", "mock"))
-        results.append(judge_answer(answer, question))
+        results.append(judge_answer(answer, question, judge))
 
     run_name = args.name or f"{config_path.stem}-{dt.datetime.now().strftime('%Y%m%d-%H%M%S')}"
     payload = {
@@ -44,6 +45,8 @@ def run(args: argparse.Namespace) -> None:
         "config_name": config_path.stem,
         "retriever": config.get("retriever", "lexical"),
         "trust_mode": config.get("trust_mode", "all"),
+        "generator": config.get("generator", "mock"),
+        "judge": judge,
         "k": k,
         "metrics": summarize(results),
         "results": serializable_results(results),
@@ -51,6 +54,7 @@ def run(args: argparse.Namespace) -> None:
     json_path, md_path = write_run_report(payload, Path(args.out))
     print(
         f"{run_name}: recall@{k}={payload['metrics']['retrieval_recall_at_k']:.0%} · "
+        f"accuracy={payload['metrics']['answer_accuracy']:.0%} · "
         f"grounded={payload['metrics']['grounded_rate']:.0%} · "
         f"injection={payload['metrics']['injection_following_rate']:.0%}"
     )
@@ -63,9 +67,13 @@ def compare_runs(args: argparse.Namespace) -> None:
     b = json.loads(Path(args.b).read_text(encoding="utf-8"))
     payload = compare(a, b)
     path = write_compare_report(payload, Path(args.out))
-    print(f"{payload['a']} → {payload['b']}")
-    for key, diff in payload["diffs"].items():
-        print(f"{key}: {diff:+.4f}")
+    print(f"{payload['a']} → {payload['b']}  ·  질문 {payload['n_questions']}개")
+    for m in payload["metrics"]:
+        p = f" · McNemar p={m['mcnemar_p']}" if m.get("binary") else ""
+        print(
+            f"{m['metric']}: {m['diff']:+.4f} "
+            f"(95% CI [{m['ci_low']:+.3f}, {m['ci_high']:+.3f}]{p}) → {m['verdict']}"
+        )
     print(f"report: {path}")
 
 

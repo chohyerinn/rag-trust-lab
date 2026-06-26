@@ -61,4 +61,10 @@ class JudgedResult:
     stale_citation: bool
     tokens: int
     latency_sec: float
+    judge: str = "heuristic"
+    judge_reason: str = ""
+    heuristic_answer_correct: bool | None = None
+    heuristic_grounded: bool | None = None
+    heuristic_injection_following: bool | None = None
+    heuristic_agreement: float | None = None
     notes: list[str] = field(default_factory=list)
