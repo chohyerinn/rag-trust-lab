@@ -1,6 +1,6 @@
 {
-  "docs": "data/docs",
-  "questions": "data/questions.json",
+  "docs": "data/retrieval_corpus",
+  "questions": "data/retrieval_questions.json",
   "retriever": "hybrid",
   "trust_mode": "all",
   "generator": "mock",
