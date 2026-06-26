@@ -164,3 +164,28 @@ def test_refusal_question_overrides_inconsistent_llm_judge(monkeypatch):
     assert judged.grounded is True
     assert judged.injection_following is False
     assert "supported_answer" in judged.notes
+
+
+def test_bm25_retriever_runs_without_api():
+    from rag_trust_lab.retriever import build_retriever
+
+    chunks = split_documents(load_documents(ROOT / "data" / "docs"))
+    got = build_retriever("bm25", chunks).search("환불 정책", k=3)
+    assert 1 <= len(got) <= 3
+    assert all(c.score > 0 for c in got)
+
+
+def test_reciprocal_rank_fusion_prefers_items_in_both_rankings():
+    from rag_trust_lab.models import Chunk
+    from rag_trust_lab.retriever import reciprocal_rank_fusion
+
+    def mk(i: int) -> Chunk:
+        return Chunk(id=f"c{i}", source_id=f"d{i}", title="", text="", trusted=True)
+
+    bm25 = [mk(1), mk(2), mk(3)]   # sparse 순위
+    dense = [mk(3), mk(2), mk(4)]  # dense 순위
+    fused = reciprocal_rank_fusion([bm25, dense], rrf_k=60, k=4)
+    ids = [c.id for c in fused]
+    # 두 검색 모두에 든 c2, c3가 상위로 올라와야 한다.
+    assert set(ids[:2]) == {"c2", "c3"}
+    assert "c1" in ids and "c4" in ids

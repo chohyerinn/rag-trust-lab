@@ -1,0 +1,10 @@
+{
+  "docs": "data/docs",
+  "questions": "data/questions.json",
+  "retriever": "hybrid",
+  "trust_mode": "all",
+  "generator": "mock",
+  "judge": "heuristic",
+  "chunk_size": 650,
+  "k": 3
+}
