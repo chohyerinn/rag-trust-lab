@@ -1,0 +1,201 @@
+[
+  {
+    "id": "q_refund",
+    "question": "돈을 돌려받으려면 며칠 안에 신청해야 하나요?",
+    "gold_sources": [
+      "refund_policy"
+    ],
+    "expected_terms": [
+      "7일"
+    ],
+    "category": "retrieval"
+  },
+  {
+    "id": "q_billing",
+    "question": "요금은 보통 언제 빠져나가나요?",
+    "gold_sources": [
+      "billing_cycle"
+    ],
+    "expected_terms": [
+      "1일"
+    ],
+    "category": "retrieval"
+  },
+  {
+    "id": "q_free_upload",
+    "question": "공짜로 쓰면 파일을 올릴 수 있나요?",
+    "gold_sources": [
+      "plan_free"
+    ],
+    "expected_terms": [
+      "지원되지"
+    ],
+    "category": "retrieval"
+  },
+  {
+    "id": "q_pro_limit",
+    "question": "유료 등급은 한 달에 몇 개까지 올릴 수 있어요?",
+    "gold_sources": [
+      "plan_pro"
+    ],
+    "expected_terms": [
+      "1,000"
+    ],
+    "category": "retrieval"
+  },
+  {
+    "id": "q_delete",
+    "question": "탈퇴하면 내 자료는 바로 사라지나요?",
+    "gold_sources": [
+      "account_deletion"
+    ],
+    "expected_terms": [
+      "30일"
+    ],
+    "category": "retrieval"
+  },
+  {
+    "id": "q_pw",
+    "question": "로그인 암호를 까먹었을 때 어떻게 하나요?",
+    "gold_sources": [
+      "password_reset"
+    ],
+    "expected_terms": [
+      "링크"
+    ],
+    "category": "retrieval"
+  },
+  {
+    "id": "q_contact",
+    "question": "고객 연락처는 어떻게 보호하나요?",
+    "gold_sources": [
+      "pii_masking"
+    ],
+    "expected_terms": [
+      "마스킹"
+    ],
+    "category": "retrieval"
+  },
+  {
+    "id": "q_record",
+    "question": "접속 기록은 얼마나 오래 남아 있나요?",
+    "gold_sources": [
+      "data_retention"
+    ],
+    "expected_terms": [
+      "90일"
+    ],
+    "category": "retrieval"
+  },
+  {
+    "id": "q_call",
+    "question": "사람과 통화하려면 몇 시에 전화하면 되나요?",
+    "gold_sources": [
+      "support_hours"
+    ],
+    "expected_terms": [
+      "9",
+      "6"
+    ],
+    "category": "retrieval"
+  },
+  {
+    "id": "q_calls",
+    "question": "1분에 몇 번까지 호출할 수 있어요?",
+    "gold_sources": [
+      "api_rate_limit"
+    ],
+    "expected_terms": [
+      "60"
+    ],
+    "category": "retrieval"
+  },
+  {
+    "id": "q_secure",
+    "question": "계정을 더 안전하게 만들려면 뭘 켜야 하나요?",
+    "gold_sources": [
+      "two_factor"
+    ],
+    "expected_terms": [
+      "2단계"
+    ],
+    "category": "retrieval"
+  },
+  {
+    "id": "q_download",
+    "question": "내 자료를 파일로 받으려면 어디로 가나요?",
+    "gold_sources": [
+      "export_data"
+    ],
+    "expected_terms": [
+      "내보내기"
+    ],
+    "category": "retrieval"
+  },
+  {
+    "id": "q_refund2",
+    "question": "환불은 결제 후 며칠 이내에 요청할 수 있나요?",
+    "gold_sources": [
+      "refund_policy"
+    ],
+    "expected_terms": [
+      "7일"
+    ],
+    "category": "retrieval"
+  },
+  {
+    "id": "q_free2",
+    "question": "무료 플랜에서 파일 업로드가 지원되나요?",
+    "gold_sources": [
+      "plan_free"
+    ],
+    "expected_terms": [
+      "지원되지"
+    ],
+    "category": "retrieval"
+  },
+  {
+    "id": "q_pro2",
+    "question": "Pro 플랜의 파일 업로드 한도는 얼마인가요?",
+    "gold_sources": [
+      "plan_pro"
+    ],
+    "expected_terms": [
+      "1,000"
+    ],
+    "category": "retrieval"
+  },
+  {
+    "id": "q_pii2",
+    "question": "개인정보는 저장 전에 어떻게 처리해야 하나요?",
+    "gold_sources": [
+      "pii_masking"
+    ],
+    "expected_terms": [
+      "마스킹"
+    ],
+    "category": "retrieval"
+  },
+  {
+    "id": "q_2fa2",
+    "question": "2단계 인증은 어디서 활성화하나요?",
+    "gold_sources": [
+      "two_factor"
+    ],
+    "expected_terms": [
+      "설정"
+    ],
+    "category": "retrieval"
+  },
+  {
+    "id": "q_api2",
+    "question": "공개 API의 호출 제한은 분당 몇 회인가요?",
+    "gold_sources": [
+      "api_rate_limit"
+    ],
+    "expected_terms": [
+      "60"
+    ],
+    "category": "retrieval"
+  }
+]
