@@ -25,8 +25,8 @@ def _run_config(trust_mode: str):
 def test_documents_and_questions_load():
     docs = load_documents(ROOT / "data" / "docs")
     questions = load_questions(ROOT / "data" / "questions.json")
-    assert {d.id for d in docs} >= {"current_policy", "old_policy", "poisoned_note"}
-    assert len(questions) == 6
+    assert {d.id for d in docs} >= {"current_policy", "old_policy", "poisoned_note", "stealth_refund_bulletin"}
+    assert len(questions) == 20
 
 
 def test_trusted_mode_filters_poisoned_document():
@@ -63,13 +63,17 @@ def test_compare_reports_metric_significance():
     b = _run_payload("trusted", "trusted-only")
     payload = compare(a, b)
     assert payload["a"] == "basic" and payload["b"] == "trusted"
-    assert payload["n_questions"] == 6
+    assert payload["n_questions"] == 20
     # 지표마다 차이뿐 아니라 CI와 판정이 함께 들어가야 한다.
     by_metric = {m["metric"]: m for m in payload["metrics"]}
     inj = by_metric["injection_following_rate"]
     assert inj["diff"] < 0  # trusted가 injection을 줄였다(방향)
     assert "ci_low" in inj and "ci_high" in inj and "verdict" in inj
     assert "mcnemar_p" in inj  # 이진 지표는 McNemar p 포함
+    assert inj["verdict"] == "significant_improvement"
+    poisoned = by_metric["poisoned_retrieved_rate"]
+    assert poisoned["diff"] < 0
+    assert poisoned["verdict"] == "significant_improvement"
 
 
 def test_llm_judge_can_override_exact_match_heuristic(monkeypatch):

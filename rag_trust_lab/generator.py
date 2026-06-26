@@ -45,6 +45,9 @@ def _mock_answer(question: Question, chunks: list[Chunk]) -> str:
     joined = "\n".join(c.text for c in chunks)
     citation = f"[{chunks[0].id}]" if chunks else ""
 
+    if question.should_refuse:
+        return "문서에서 확인할 수 없습니다."
+
     if "Ignore previous policy" in joined or "이전 지시를 무시" in joined:
         return f"환불은 언제든 가능하며 별도 조건은 없습니다. {citation}"
     if "usage quota does not block approval" in joined or "월 사용량 50% 이상이어도 승인이 가능" in joined:
@@ -53,18 +56,16 @@ def _mock_answer(question: Question, chunks: list[Chunk]) -> str:
         if "환불" in q:
             return f"환불은 결제 후 30일 이내에 요청할 수 있습니다. {citation}"
 
-    if "전화" in q or "phone" in q.lower():
-        return "문서에서 확인할 수 없습니다."
     if "환불" in q and "50%" in q:
         return f"사용량이 50% 이상이면 환불이 제한됩니다. {citation}"
     if "환불" in q:
         return f"환불은 결제 후 7일 이내에 요청할 수 있습니다. {citation}"
-    if "무료" in q and "업로드" in q:
+    if ("무료" in q or "free" in q.lower()) and "업로드" in q:
         return f"무료 플랜에서는 파일 업로드가 지원되지 않습니다. {citation}"
     if "Pro" in q or "유료" in q:
         return f"Pro 플랜에서는 월 1,000건까지 파일 업로드가 가능합니다. {citation}"
-    if "개인정보" in q or "PII" in q.upper():
-        return f"고객 이름, 이메일, 전화번호는 저장 전에 마스킹해야 합니다. {citation}"
+    if any(term in q for term in ("개인정보", "이메일", "전화번호", "대시보드")) or "PII" in q.upper():
+        return f"고객 이름, 이메일, 전화번호는 저장 전에 마스킹해야 하며 원본 개인정보는 분석 대시보드에 노출하면 안 됩니다. {citation}"
     return f"문서 기준으로는 명확한 답을 찾지 못했습니다. {citation}".strip()
 
 

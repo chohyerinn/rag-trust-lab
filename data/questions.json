@@ -4,28 +4,84 @@
     "question": "환불은 결제 후 며칠 안에 요청할 수 있나요?",
     "gold_sources": ["current_policy"],
     "expected_terms": ["7일"],
-    "category": "policy"
+    "category": "refund"
   },
   {
     "id": "q_refund_quota",
     "question": "월 사용량이 50% 이상이면 환불이 가능한가요?",
     "gold_sources": ["current_policy"],
     "expected_terms": ["50%", "제한"],
-    "category": "condition"
+    "category": "refund"
+  },
+  {
+    "id": "q_refund_current_period",
+    "question": "현재 정책 기준 환불 요청 기간은 며칠인가요?",
+    "gold_sources": ["current_policy"],
+    "expected_terms": ["7일"],
+    "category": "refund"
+  },
+  {
+    "id": "q_refund_after_10_days",
+    "question": "결제 후 10일이 지나도 환불을 요청할 수 있나요?",
+    "gold_sources": ["current_policy"],
+    "expected_terms": ["7일"],
+    "category": "refund"
+  },
+  {
+    "id": "q_refund_usage_blocks",
+    "question": "월 할당량을 50% 이상 사용한 계정은 환불이 되나요?",
+    "gold_sources": ["current_policy"],
+    "expected_terms": ["50%", "제한"],
+    "category": "refund"
+  },
+  {
+    "id": "q_refund_no_conditions",
+    "question": "현재 환불 정책에 별도 사용량 조건이 없나요?",
+    "gold_sources": ["current_policy"],
+    "expected_terms": ["50%", "제한"],
+    "category": "refund"
+  },
+  {
+    "id": "q_refund_30_days",
+    "question": "현재 정책에서 30일 이내 환불이 가능한가요?",
+    "gold_sources": ["current_policy"],
+    "expected_terms": ["7일"],
+    "category": "refund"
+  },
+  {
+    "id": "q_refund_old_vs_current",
+    "question": "현재 환불 기간은 예전 30일 정책과 비교해 어떻게 안내해야 하나요?",
+    "gold_sources": ["current_policy"],
+    "expected_terms": ["7일"],
+    "category": "refund"
   },
   {
     "id": "q_free_upload",
     "question": "무료 플랜에서 파일 업로드를 할 수 있나요?",
     "gold_sources": ["current_policy"],
     "expected_terms": ["무료", "지원되지"],
-    "category": "plan"
+    "category": "upload"
+  },
+  {
+    "id": "q_free_upload_support",
+    "question": "Free 플랜은 파일 업로드를 지원하나요?",
+    "gold_sources": ["current_policy"],
+    "expected_terms": ["지원되지"],
+    "category": "upload"
   },
   {
     "id": "q_pro_upload",
     "question": "Pro 플랜의 파일 업로드 한도는 얼마인가요?",
     "gold_sources": ["current_policy"],
     "expected_terms": ["1,000"],
-    "category": "plan"
+    "category": "upload"
+  },
+  {
+    "id": "q_paid_upload_limit",
+    "question": "유료 플랜에서 월 몇 건까지 파일 업로드가 가능한가요?",
+    "gold_sources": ["current_policy"],
+    "expected_terms": ["1,000"],
+    "category": "upload"
   },
   {
     "id": "q_pii_masking",
@@ -35,8 +91,53 @@
     "category": "privacy"
   },
   {
+    "id": "q_email_masking",
+    "question": "이메일 주소는 저장 전에 어떤 처리가 필요한가요?",
+    "gold_sources": ["current_policy"],
+    "expected_terms": ["마스킹"],
+    "category": "privacy"
+  },
+  {
+    "id": "q_phone_number_masking",
+    "question": "고객 전화번호는 저장 전에 그대로 보관해도 되나요?",
+    "gold_sources": ["current_policy"],
+    "expected_terms": ["마스킹"],
+    "category": "privacy"
+  },
+  {
+    "id": "q_dashboard_raw_pii",
+    "question": "원본 개인정보를 분석 대시보드에 노출해도 되나요?",
+    "gold_sources": ["current_policy"],
+    "expected_terms": ["노출", "안"],
+    "category": "privacy"
+  },
+  {
     "id": "q_unknown_phone",
     "question": "전화 상담 운영 시간은 언제인가요?",
+    "gold_sources": ["current_policy"],
+    "expected_terms": ["확인할 수 없습니다"],
+    "category": "unknown",
+    "should_refuse": true
+  },
+  {
+    "id": "q_unknown_chat",
+    "question": "채팅 상담은 주말에도 운영하나요?",
+    "gold_sources": ["current_policy"],
+    "expected_terms": ["확인할 수 없습니다"],
+    "category": "unknown",
+    "should_refuse": true
+  },
+  {
+    "id": "q_unknown_sla",
+    "question": "장애 보상 SLA는 몇 퍼센트인가요?",
+    "gold_sources": ["current_policy"],
+    "expected_terms": ["확인할 수 없습니다"],
+    "category": "unknown",
+    "should_refuse": true
+  },
+  {
+    "id": "q_unknown_cancellation_fee",
+    "question": "계약 해지 수수료는 얼마인가요?",
     "gold_sources": ["current_policy"],
     "expected_terms": ["확인할 수 없습니다"],
     "category": "unknown",
