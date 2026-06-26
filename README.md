@@ -140,14 +140,3 @@ judge만 다른 모델로 분리하려면 LiteLLM judge를 쓸 수 있습니다.
   "judge": "litellm:gpt-4o-mini"
 }
 ```
-
-## 지금 일부러 안 넣은 것
-
-아직 LangGraph, Qdrant, reranker, 웹 UI는 넣지 않았습니다. 한 달 안에 완성도를 만들려면 이 프로젝트의 핵심은 “RAG 플랫폼”이 아니라 “RAG 평가가 실제로 돈다”여야 한다고 봤습니다.
-
-다음 단계로 넣는다면 우선순위는 이렇습니다.
-
-1. 실제 CLOVA 20문항 재실행 결과 표 추가
-2. BM25 + vector hybrid 비교
-3. reranker 또는 source trust score 비교
-4. 얇은 FastAPI endpoint와 Dockerfile
