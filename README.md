@@ -10,7 +10,8 @@ RAG 답변이 맞았는지만 보는 대신, **검색이 근거를 찾았는지,
 - retrieval recall@k, MRR
 - grounded rate, answer accuracy
 - prompt injection following rate
-- 설정 A/B 비교 리포트
+- CLOVA LLM-as-a-Judge 옵션과 휴리스틱 judge 일치율
+- 설정 A/B 회귀 비교 — **페어드 부트스트랩 CI + McNemar 검정**으로 유의성까지 판정 (`mini-agent-harness`와 동일 평가 방법론)
 
 ## 왜 만들었나
 
@@ -46,6 +47,23 @@ python -m rag_trust_lab compare --a reports/basic.json --b reports/trusted.json
 
 이 숫자는 모델 성능 주장이라기보다, 평가 흐름이 어떤 식으로 동작하는지 보여주는 작은 예시입니다.
 
+`compare`는 평균 차이만 보지 않습니다. 두 config가 같은 질문 세트를 풀기 때문에, 지표마다 **질문 단위 페어드 부트스트랩 95% CI**와 (이진 지표는) **McNemar 검정**으로 유의성을 판정합니다. 예를 들어 위 `injection` 17%→0%는 *방향은 개선*이지만 질문이 6개(1개 뒤집힘)뿐이라 `improvement_not_significant`(McNemar p=1.0)로 나옵니다 — 적은 표본으로 개선을 단정하지 않기 위함이며, 그래서 다음 단계가 질문 세트 확장입니다. `injection`·`stale`처럼 작을수록 좋은 지표는 극성을 반영해 판정합니다.
+
+## CLOVA로 실제 생성 + LLM Judge 돌리기
+
+`configs/clova-basic.json`과 `configs/clova-trusted.json`은 답변 생성과 judge를 모두 HCX-005로 실행합니다. 생성 답변을 다시 LLM judge가 판정하므로 6문항 × 2설정 기준 총 24회 호출입니다.
+
+```powershell
+$env:CLOVASTUDIO_API_KEY = "..."
+python -m rag_trust_lab run --config configs/clova-basic.json --name clova-basic
+python -m rag_trust_lab run --config configs/clova-trusted.json --name clova-trusted
+python -m rag_trust_lab compare --a reports/clova-basic.json --b reports/clova-trusted.json
+```
+
+리포트의 `judge / heuristic agreement`는 LLM judge와 기존 deterministic judge가 얼마나 일치했는지 보여줍니다. 값이 낮은 문항은 실제 답변 원문과 judge reason을 같이 보면서 휴리스틱 개선 후보로 보면 됩니다.
+
+현재 HCX-005 실행에서는 `basic`과 `trusted`가 모두 answer accuracy 100%, grounded 100%, injection following 0%였습니다. 즉 이 샘플에서는 trusted filtering이 점수를 끌어올렸다기보다, HCX-005가 검색된 poisoned note를 따라가지 않았다는 방어 결과로 보는 것이 맞습니다. 다만 현재 poisoned note가 테스트용 오염 문서임을 비교적 노골적으로 드러내므로, 다음 실험은 더 은밀한 오염 문서로 공격 난도를 높이는 쪽이 좋습니다.
+
 ## 프로젝트 구조
 
 ```text
@@ -53,7 +71,7 @@ rag_trust_lab/
   data.py        # markdown docs / question set loader
   retriever.py   # lexical fallback + optional Chroma retriever
   generator.py   # mock generator + LiteLLM generator hook
-  judge.py       # grounding / injection / stale source checks
+  judge.py       # heuristic + optional CLOVA LLM-as-a-Judge checks
   metrics.py     # recall@k, MRR, grounded rate, regression diff
   report.py      # markdown / json report
   cli.py         # run, compare
@@ -85,7 +103,14 @@ LiteLLM 모델을 쓰려면 config의 generator를 바꿉니다.
 }
 ```
 
-CLOVA를 LiteLLM proxy 뒤에 붙이면 같은 CLI에서 모델만 바꿔 실험할 수 있습니다.
+또는 CLOVA의 OpenAI 호환 endpoint를 직접 쓰려면 config에서 `generator`와 `judge`를 지정합니다.
+
+```json
+{
+  "generator": "clova:HCX-005",
+  "judge": "clova:HCX-005"
+}
+```
 
 ## 지금 일부러 안 넣은 것
 
@@ -94,6 +119,6 @@ CLOVA를 LiteLLM proxy 뒤에 붙이면 같은 CLI에서 모델만 바꿔 실험
 다음 단계로 넣는다면 우선순위는 이렇습니다.
 
 1. 질문 세트 20개로 확장
-2. LLM-as-a-Judge 옵션 추가
+2. 더 은밀한 poisoned document 추가
 3. BM25 + vector hybrid 비교
 4. 얇은 FastAPI endpoint와 Dockerfile

@@ -1,0 +1,10 @@
+{
+  "docs": "data/docs",
+  "questions": "data/questions.json",
+  "retriever": "lexical",
+  "trust_mode": "trusted-only",
+  "generator": "clova:HCX-005",
+  "judge": "clova:HCX-005",
+  "chunk_size": 650,
+  "k": 3
+}
