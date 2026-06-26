@@ -17,6 +17,17 @@ RAG 답변이 맞았는지만 보는 대신, **검색이 근거를 찾았는지,
 - CLOVA LLM-as-a-Judge 옵션과 휴리스틱 judge 일치율
 - 설정 A/B 회귀 비교 — **페어드 부트스트랩 CI + McNemar 검정**으로 유의성까지 판정 (`mini-agent-harness`와 동일 평가 방법론)
 
+## 데모
+
+<!-- 배포 후 아래에 live URL을 넣으세요: [▶ live demo](https://...streamlit.app) -->
+
+질문을 넣으면 검색된 근거(신뢰/오염 표시)·답변·신뢰성 판정을 한 화면에서 봅니다. 사이드바의 `trust_mode`를 `all` → `trusted-only`로 바꾸면 **오염 문서가 검색 단계에서 사라지는 것**을 눈으로 확인할 수 있습니다. API 키 없이 lexical retriever + mock generator로 동작합니다.
+
+```powershell
+pip install -r requirements.txt
+streamlit run streamlit_app.py
+```
+
 ## 실제 CLOVA 결과
 
 HCX-005를 실제 생성 모델 + judge로 붙여 20문항을 실행한 결과입니다(생성·judge 모두 HCX-005).
@@ -132,7 +143,7 @@ configs/
 기본 실행은 가볍게 만들기 위해 외부 API 없이 돌아갑니다. 실제 RAG 스택을 붙이고 싶으면:
 
 ```powershell
-pip install -r requirements.txt
+pip install -r requirements-optional.txt
 python -m rag_trust_lab run --config configs/chroma.json --name chroma-trusted
 ```
 
