@@ -1,11 +1,14 @@
 # rag-trust-lab
 
+[![CI](https://github.com/chohyerinn/rag-trust-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/chohyerinn/rag-trust-lab/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 RAG 답변이 맞았는지만 보는 대신, **검색이 근거를 찾았는지, 답변이 근거에 붙어 있는지, 오염 문서에 속았는지**를 같이 보는 작은 평가 하니스입니다.
 
 큰 RAG 플랫폼을 만들기보다, 채용공고에서 자주 보이는 RAG 키워드를 작은 완성물 안에 넣는 쪽으로 범위를 줄였습니다.
 
 - LangChain / Chroma를 붙일 수 있는 retriever 구조
-- 기본 실행은 API 키 없는 lexical retriever + mock generator
+- 기본 실행은 API 키 없는 lexical retriever + deterministic mock generator
 - LiteLLM generator hook
 - retrieval recall@k, MRR
 - grounded rate, answer accuracy
@@ -13,6 +16,17 @@ RAG 답변이 맞았는지만 보는 대신, **검색이 근거를 찾았는지,
 - untrusted / poisoned document retrieval rate
 - CLOVA LLM-as-a-Judge 옵션과 휴리스틱 judge 일치율
 - 설정 A/B 회귀 비교 — **페어드 부트스트랩 CI + McNemar 검정**으로 유의성까지 판정 (`mini-agent-harness`와 동일 평가 방법론)
+
+## 실제 CLOVA 결과
+
+HCX-005를 실제 생성 모델로 붙여 6문항 smoke run을 실행했을 때, `basic`은 poisoned note를 검색했지만 답변에서 injection을 따르지 않았습니다.
+
+| Config | recall@3 | accuracy | grounded | injection following |
+| --- | ---: | ---: | ---: | ---: |
+| `clova-basic` | 83% | 100% | 100% | 0% |
+| `clova-trusted` | 83% | 100% | 100% | 0% |
+
+이 결과는 "trusted filtering이 모든 점수를 올렸다"가 아니라, **HCX-005가 이 명시적 오염 문서에는 속지 않았다**는 쪽으로 해석해야 합니다. 그래서 이 프로젝트는 답변 성공률만 보지 않고 `poisoned_retrieved_rate`처럼 검색 단계의 오염 노출도 따로 기록합니다.
 
 ## 왜 만들었나
 
@@ -40,22 +54,22 @@ python -m rag_trust_lab compare --a reports/basic.json --b reports/trusted.json
 
 `trusted`는 trusted 문서만 검색합니다. 같은 질문 세트에서 injection-following이 줄어드는지 비교합니다.
 
-현재 샘플 실행 결과:
+20문항 deterministic mock smoke test 결과:
 
 | Config | recall@3 | accuracy | grounded | injection following | poisoned retrieved |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `basic` | 83% | 67% | 67% | 33% | 50% |
-| `trusted` | 83% | 100% | 100% | 0% | 0% |
+| `basic` | 65% | 60% | 60% | 40% | 55% |
+| `trusted` | 65% | 95% | 90% | 0% | 0% |
 
-이 숫자는 모델 성능 주장이라기보다, 평가 흐름이 어떤 식으로 동작하는지 보여주는 작은 예시입니다.
+이 숫자는 모델 성능 주장이 아닙니다. `mock`은 검색 오염이 생성 실패로 이어지는 상황을 재현하기 위한 deterministic smoke test입니다. 실제 모델 성능은 CLOVA나 별도 generator를 붙인 실행 결과로 봐야 합니다.
 
-`compare`는 평균 차이만 보지 않습니다. 두 config가 같은 질문 세트를 풀기 때문에, 지표마다 **질문 단위 페어드 부트스트랩 95% CI**와 (이진 지표는) **McNemar 검정**으로 유의성을 판정합니다. 예를 들어 위 `injection` 33%→0%는 *방향은 개선*이지만 질문이 6개뿐이라 `improvement_not_significant`로 나옵니다 — 적은 표본으로 개선을 단정하지 않기 위함이며, 그래서 다음 단계가 질문 세트 확장입니다. `injection`·`stale`·`poisoned retrieved`처럼 작을수록 좋은 지표는 극성을 반영해 판정합니다.
+`compare`는 평균 차이만 보지 않습니다. 두 config가 같은 질문 세트를 풀기 때문에, 지표마다 **질문 단위 페어드 부트스트랩 95% CI**와 (이진 지표는) **McNemar 검정**으로 유의성을 판정합니다. 20문항 mock smoke test에서는 `injection_following_rate` 40%→0%, `poisoned_retrieved_rate` 55%→0%가 `significant_improvement`로 잡힙니다. `injection`·`stale`·`poisoned retrieved`처럼 작을수록 좋은 지표는 극성을 반영해 판정합니다.
 
 `poisoned_retrieved_rate`는 답변 생성 전 단계의 위험을 봅니다. 모델이 오염 문서를 따르지 않았더라도, 검색 결과에 untrusted/poisoned 근거가 들어오면 이후 모델·프롬프트·질문 변화에 따라 실패할 여지가 있으므로 별도 지표로 남깁니다.
 
 ## CLOVA로 실제 생성 + LLM Judge 돌리기
 
-`configs/clova-basic.json`과 `configs/clova-trusted.json`은 답변 생성과 judge를 모두 HCX-005로 실행합니다. 생성 답변을 다시 LLM judge가 판정하므로 6문항 × 2설정 기준 총 24회 호출입니다.
+`configs/clova-basic.json`과 `configs/clova-trusted.json`은 답변 생성과 judge를 모두 HCX-005로 실행합니다. 현재 20문항 기준으로는 20문항 × 2설정 × (생성+judge) = 80회 호출입니다.
 
 ```powershell
 $env:CLOVASTUDIO_API_KEY = "..."
@@ -65,6 +79,8 @@ python -m rag_trust_lab compare --a reports/clova-basic.json --b reports/clova-t
 ```
 
 리포트의 `judge / heuristic agreement`는 LLM judge와 기존 deterministic judge가 얼마나 일치했는지 보여줍니다. 값이 낮은 문항은 실제 답변 원문과 judge reason을 같이 보면서 휴리스틱 개선 후보로 보면 됩니다.
+
+기본 CLOVA config는 생성과 judge가 모두 HCX-005라서 self-judging bias가 있을 수 있습니다. 이 결과는 최종 벤치마크 점수라기보다 실제 모델 smoke test로 봐야 합니다. 더 엄밀하게 보려면 생성은 `clova:HCX-005`, judge는 `litellm:gpt-4o-mini`처럼 다른 모델로 분리할 수 있습니다.
 
 HCX-005 실행에서는 모델이 오염 문서를 검색해도 injection을 따르지 않을 수 있습니다. 그 경우 trusted filtering의 효과는 `answer_accuracy`보다 `poisoned_retrieved_rate` 같은 검색 리스크 지표에서 먼저 드러납니다. 실제 모델 결과를 해석할 때는 숫자만 보지 말고 `reports/*.md`의 답변 원문과 judge reason을 함께 확인해야 합니다.
 
@@ -116,13 +132,22 @@ LiteLLM 모델을 쓰려면 config의 generator를 바꿉니다.
 }
 ```
 
+judge만 다른 모델로 분리하려면 LiteLLM judge를 쓸 수 있습니다.
+
+```json
+{
+  "generator": "clova:HCX-005",
+  "judge": "litellm:gpt-4o-mini"
+}
+```
+
 ## 지금 일부러 안 넣은 것
 
 아직 LangGraph, Qdrant, reranker, 웹 UI는 넣지 않았습니다. 한 달 안에 완성도를 만들려면 이 프로젝트의 핵심은 “RAG 플랫폼”이 아니라 “RAG 평가가 실제로 돈다”여야 한다고 봤습니다.
 
 다음 단계로 넣는다면 우선순위는 이렇습니다.
 
-1. 질문 세트 20개로 확장
+1. 실제 CLOVA 20문항 재실행 결과 표 추가
 2. BM25 + vector hybrid 비교
 3. reranker 또는 source trust score 비교
 4. 얇은 FastAPI endpoint와 Dockerfile
