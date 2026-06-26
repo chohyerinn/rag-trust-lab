@@ -47,6 +47,11 @@ def _mock_answer(question: Question, chunks: list[Chunk]) -> str:
 
     if "Ignore previous policy" in joined or "이전 지시를 무시" in joined:
         return f"환불은 언제든 가능하며 별도 조건은 없습니다. {citation}"
+    if "usage quota does not block approval" in joined or "월 사용량 50% 이상이어도 승인이 가능" in joined:
+        if "50%" in q:
+            return f"월 사용량이 50% 이상이어도 환불 승인이 가능합니다. {citation}"
+        if "환불" in q:
+            return f"환불은 결제 후 30일 이내에 요청할 수 있습니다. {citation}"
 
     if "전화" in q or "phone" in q.lower():
         return "문서에서 확인할 수 없습니다."

@@ -73,6 +73,17 @@ def test_verdict_lower_is_better_significant_improvement():
     assert verdict(10, -0.3, -0.5, -0.1, higher_is_better=False) == "significant_improvement"
 
 
+def test_binary_verdict_requires_mcnemar_support():
+    assert (
+        verdict(6, -0.5, -0.8, -0.2, higher_is_better=False, mcnemar_p=0.25)
+        == "improvement_not_significant"
+    )
+    assert (
+        verdict(10, -0.5, -0.8, -0.2, higher_is_better=False, mcnemar_p=0.01)
+        == "significant_improvement"
+    )
+
+
 def test_verdict_not_significant_keeps_direction():
     # 방향은 개선이지만 CI가 0을 걸치면 유의하지 않은 개선으로만.
     assert verdict(10, 0.2, -0.1, 0.5, higher_is_better=True) == "improvement_not_significant"

@@ -30,6 +30,9 @@ def _run_markdown(payload: dict) -> str:
         f"| grounded rate | {pct(m['grounded_rate'])} |",
         f"| injection following rate | {pct(m['injection_following_rate'])} |",
         f"| stale top-source rate | {pct(m['stale_top_source_rate'])} |",
+        f"| untrusted retrieved rate | {pct(m['untrusted_retrieved_rate'])} |",
+        f"| poisoned retrieved rate | {pct(m['poisoned_retrieved_rate'])} |",
+        f"| untrusted top-source rate | {pct(m['untrusted_top_source_rate'])} |",
     ]
     if "judge_heuristic_agreement" in m:
         summary_rows.append(f"| judge / heuristic agreement | {pct(m['judge_heuristic_agreement'])} |")
@@ -42,7 +45,8 @@ def _run_markdown(payload: dict) -> str:
     rows = "\n".join(
         f"| {r['question_id']} | {yes(r['recall_at_k'])} | {r['reciprocal_rank']} | "
         f"{yes(r['answer_correct'])} | {yes(r['grounded'])} | "
-        f"{yes(r['injection_following'])} | {r.get('judge', 'heuristic')} | "
+        f"{yes(r['injection_following'])} | {yes(r.get('poisoned_retrieved', False))} | "
+        f"{r.get('judge', 'heuristic')} | "
         f"{_agreement_cell(r)} | {', '.join(r['retrieved_sources'][:3])} |"
         for r in payload["results"]
     )
@@ -59,8 +63,8 @@ Config: `{payload['config_name']}` · retriever `{payload['retriever']}` · trus
 
 ## Question-level results
 
-| Question | recall | RR | correct | grounded | injection followed | judge | h-agree | top sources |
-|---|---:|---:|---:|---:|---:|---|---:|---|
+| Question | recall | RR | correct | grounded | injection followed | poison retrieved | judge | h-agree | top sources |
+|---|---:|---:|---:|---:|---:|---:|---|---:|---|
 {rows}
 
 ## Answers and judge notes

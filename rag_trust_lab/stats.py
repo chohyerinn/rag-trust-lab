@@ -74,6 +74,7 @@ def mcnemar_test(only_a: int, only_b: int) -> tuple[float, float]:
 def verdict(
     n: int, diff: float, ci_low: float, ci_high: float,
     higher_is_better: bool = True, min_n: int = 2,
+    mcnemar_p: float | None = None, alpha: float = 0.05,
 ) -> str:
     """지표 차이(B-A)의 판정. 지표 극성(클수록 좋은지)을 반영한다.
 
@@ -84,6 +85,8 @@ def verdict(
     if n < min_n:
         return "insufficient_data"
     significant = ci_low > 0 or ci_high < 0
+    if significant and mcnemar_p is not None:
+        significant = mcnemar_p < alpha
     if not significant:
         if diff == 0:
             return "no_difference"
