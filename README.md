@@ -7,7 +7,7 @@ RAG 답변이 맞았는지만 보는 대신, **검색이 근거를 찾았는지,
 
 큰 RAG 플랫폼을 만들기보다, 채용공고에서 자주 보이는 RAG 키워드를 작은 완성물 안에 넣는 쪽으로 범위를 줄였습니다.
 
-- LangChain / Chroma를 붙일 수 있는 retriever 구조
+- 검색기 4종: lexical / BM25 / **dense(CLOVA bge-m3 임베딩)** / **hybrid(BM25+dense, RRF)**
 - 기본 실행은 API 키 없는 lexical retriever + deterministic mock generator
 - LiteLLM generator hook
 - retrieval recall@k, MRR
@@ -37,6 +37,28 @@ docker run -p 8000:8000 rag-trust-lab
 
 ```bash
 pip install streamlit && streamlit run streamlit_app.py
+```
+
+## 검색 방법 비교 (retrieval quality)
+
+질문이 문서와 *다른 단어*를 쓰면(예: "돈을 돌려받으려면" vs "환불") 단어매칭 검색은 놓칩니다. 의미 임베딩(CLOVA **bge-m3**)이 이를 메우는지, 검색기 4종을 같은 질문 18개(`data/retrieval_corpus`, gold-labeled)에서 비교했습니다.
+
+| retriever | recall@3 |
+| --- | ---: |
+| lexical (TF-IDF) | 56% |
+| BM25 | 56% |
+| **dense (CLOVA bge-m3)** | **100%** |
+| hybrid (BM25 + dense, RRF) | 83% |
+
+`lexical → dense`는 **recall@3 56% → 100%**, MRR도 **+0.44**로, 페어드 부트스트랩 95% CI `[+0.222, +0.667]`, McNemar `p=0.0078` — **통계적으로 유의한 개선**입니다. 단어가 달라도 의미가 가까우면 잡기 때문입니다.
+
+흥미로운 점: **하이브리드(83%)가 dense 단독(100%)보다 낮았습니다.** "하이브리드가 항상 낫다"는 통념과 달리, 이 작은 코퍼스에서는 BM25가 약해서(56%) RRF가 dense의 강한 순위를 희석했습니다. 방법을 더한다고 늘 이득은 아니며, 그래서 감이 아니라 지표로 확인합니다.
+
+```powershell
+python -m rag_trust_lab run --config configs/retrieval-lexical.json --name r-lexical
+$env:CLOVASTUDIO_API_KEY = "..."
+python -m rag_trust_lab run --config configs/retrieval-dense.json --name r-dense
+python -m rag_trust_lab compare --a reports/r-lexical.json --b reports/r-dense.json
 ```
 
 ## 실제 CLOVA 결과
