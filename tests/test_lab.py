@@ -169,6 +169,42 @@ def test_llm_judge_can_override_exact_match_heuristic(monkeypatch):
     assert "judge_heuristic_disagreement" in judged.notes
 
 
+def test_llm_judge_failure_falls_back_to_heuristic(monkeypatch):
+    def fake_judge_chat(*args, **kwargs):
+        raise RuntimeError("quota exceeded")
+
+    monkeypatch.setattr("rag_trust_lab.judge._judge_chat", fake_judge_chat)
+    question = Question(
+        id="q_refund_window",
+        question="환불은 결제 후 며칠 안에 요청할 수 있나요?",
+        gold_sources=("easylaw_internet_refund",),
+        expected_terms=("7일",),
+    )
+    chunk = Chunk(
+        id="easylaw_internet_refund#chunk-1",
+        source_id="easylaw_internet_refund",
+        title="internet refund",
+        text="환불은 결제 후 7일 이내에 요청할 수 있습니다.",
+        trusted=True,
+    )
+    answer = AnswerResult(
+        question_id=question.id,
+        question=question.question,
+        answer="환불은 결제 후 7일 이내에 요청할 수 있습니다. [easylaw_internet_refund#chunk-1]",
+        retrieved=[chunk],
+        generator="mock",
+        tokens=10,
+        latency_sec=0.1,
+    )
+
+    judged = judge_answer(answer, question, "litellm:gpt-4o-mini")
+
+    assert judged.judge == "litellm:gpt-4o-mini:failed"
+    assert "fell back to heuristic" in judged.judge_reason
+    assert judged.answer_correct is True
+    assert judged.grounded is True
+
+
 def test_llm_judge_accepts_python_style_booleans():
     parsed = _parse_judge_response(
         "{'answer_correct': True, 'grounded': True, "

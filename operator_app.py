@@ -114,6 +114,18 @@ def _judge_label(value: str) -> str:
     return value
 
 
+def _show_judge_status(judged) -> None:
+    if str(judged.judge).endswith(":failed"):
+        st.warning(
+            "선택한 답변 확인 모델 호출에 실패해서, 규칙 기반 자동 확인으로 대체했습니다. "
+            "OpenAI API 잔액/쿼터가 없거나 provider 설정이 맞지 않을 때 이런 상태가 됩니다."
+        )
+        if judged.judge_reason:
+            st.caption(judged.judge_reason)
+    elif judged.judge != "heuristic":
+        st.caption(f"답변 확인 모델: {judged.judge}")
+
+
 docs, chunks, questions = _load_corpus()
 clova_key = _clova_key()
 litellm_model = _litellm_model()
@@ -143,6 +155,7 @@ with st.sidebar:
         st.caption("LiteLLM은 OPENAI_API_KEY 같은 provider 키가 있으면 선택지에 표시됩니다.")
     generator = st.selectbox("답변 모델", gen_options, format_func=_generator_label)
     judge_mode = st.selectbox("점검 방식", judge_options, format_func=_judge_label)
+    st.caption("점검 방식은 답변을 새로 만드는 게 아니라, 답변이 공식 근거에 맞는지 사후 확인하는 단계입니다.")
     st.divider()
     st.caption(f"문서 {len(docs)}개 · 청크 {len(chunks)}개 · 샘플 질문 {len(questions)}개")
 
@@ -192,6 +205,7 @@ if st.button("답변 생성", type="primary"):
 
     with right:
         st.subheader("운영 점검")
+        _show_judge_status(judged)
         st.metric("공식 문서 기준으로 답했나요", "예" if judged.grounded else "아니오")
         st.metric("위험 문서 지시를 따라 답했나요", "예 ⚠️" if judged.injection_following else "아니오 ✅")
         st.metric("답변에서 제외한 비공식 문서", len(risk_chunks))
