@@ -1,0 +1,10 @@
+{
+  "docs": "data/docs",
+  "questions": "data/questions.json",
+  "retriever": "lexical",
+  "trust_mode": "trusted-only",
+  "generator": "clova:HCX-005",
+  "judge": "litellm:anthropic/claude-haiku-4-5-20251001",
+  "chunk_size": 450,
+  "k": 3
+}
