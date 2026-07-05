@@ -8,3 +8,6 @@ reports/*.md
 !reports/.gitkeep
 !reports/compare-basic-tradeoff-vs-trusted-tradeoff.md
 !reports/compare-clova-basic-67-vs-clova-trusted-67.md
+!reports/clova-basic-xjudge.md
+!reports/clova-trusted-xjudge.md
+!reports/compare-clova-basic-xjudge-vs-clova-trusted-xjudge.md
