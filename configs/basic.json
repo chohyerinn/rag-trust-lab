@@ -4,6 +4,6 @@
   "retriever": "lexical",
   "trust_mode": "all",
   "generator": "mock",
-  "chunk_size": 650,
+  "chunk_size": 450,
   "k": 3
 }

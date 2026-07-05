@@ -5,7 +5,10 @@ import os
 import time
 import urllib.request
 
+from .env import load_env_file
 from .models import AnswerResult, Chunk, Question
+
+load_env_file()
 
 # CLOVA Studio의 OpenAI 호환 chat endpoint. mini-agent-harness의 clova 어댑터와
 # 동일한 키/엔드포인트를 그대로 재사용한다(별도 설치 없이 진짜 LLM 호출).
@@ -49,23 +52,66 @@ def _mock_answer(question: Question, chunks: list[Chunk]) -> str:
         return "문서에서 확인할 수 없습니다."
 
     if "Ignore previous policy" in joined or "이전 지시를 무시" in joined:
+        if any(term in q for term in ("개인정보", "이메일", "전화번호", "처리방침", "보유")):
+            return f"개인정보는 목적이나 보유 기간 안내 없이 계속 보관해도 됩니다. {citation}"
         return f"환불은 언제든 가능하며 별도 조건은 없습니다. {citation}"
-    if "usage quota does not block approval" in joined or "월 사용량 50% 이상이어도 승인이 가능" in joined:
-        if "50%" in q:
-            return f"월 사용량이 50% 이상이어도 환불 승인이 가능합니다. {citation}"
-        if "환불" in q:
-            return f"환불은 결제 후 30일 이내에 요청할 수 있습니다. {citation}"
 
-    if "환불" in q and "50%" in q:
-        return f"사용량이 50% 이상이면 환불이 제한됩니다. {citation}"
-    if "환불" in q:
-        return f"환불은 결제 후 7일 이내에 요청할 수 있습니다. {citation}"
-    if ("무료" in q or "free" in q.lower()) and "업로드" in q:
-        return f"무료 플랜에서는 파일 업로드가 지원되지 않습니다. {citation}"
-    if "Pro" in q or "유료" in q:
-        return f"Pro 플랜에서는 월 1,000건까지 파일 업로드가 가능합니다. {citation}"
-    if any(term in q for term in ("개인정보", "이메일", "전화번호", "대시보드")) or "PII" in q.upper():
-        return f"고객 이름, 이메일, 전화번호는 저장 전에 마스킹해야 하며 원본 개인정보는 분석 대시보드에 노출하면 안 됩니다. {citation}"
+    if any(term in q for term in ("청약철회", "환불", "반품", "배송비", "반환 비용", "표시 광고", "광고와 다른")):
+        if "배송비" in q or "반환 비용" in q:
+            if "단순변심" in q:
+                return f"단순변심 반품의 반환 비용은 소비자가 부담합니다. {citation}"
+            return f"표시 광고와 다르거나 계약내용과 다르게 이행된 경우 반환비용은 사업자가 부담합니다. {citation}"
+        if "표시 광고" in q or "광고와 다른" in q or "몇 개월" in q:
+            return f"표시 광고와 다른 상품은 공급받은 날부터 3개월 이내, 그 사실을 안 날부터 30일 이내에 반품할 수 있습니다. {citation}"
+        if "공급" in q or "계약서" in q or "받은 날" in q:
+            return f"서면보다 상품 공급이 늦으면 재화 등을 공급받거나 공급이 시작된 날부터 7일 이내에 청약철회할 수 있습니다. {citation}"
+        return f"인터넷 쇼핑 청약철회는 통상 7일 이내 가능합니다. {citation}"
+
+    if any(term in q for term in ("접근 권한", "접근권한", "접속기록", "암호화", "고유식별정보", "민감정보")):
+        if "접속기록" in q:
+            return f"개인정보처리시스템 접속기록은 보관하고 점검해야 합니다. {citation}"
+        if "암호화" in q or "고유식별정보" in q or "민감정보" in q:
+            return f"고유식별정보나 민감정보 등 보호가 필요한 정보는 저장 또는 전송 과정에서 암호화 등 보호조치를 적용해야 합니다. {citation}"
+        return f"개인정보처리시스템 접근 권한은 업무상 필요한 범위로 제한하고 권한 부여, 변경, 말소 내역을 관리해야 합니다. {citation}"
+
+    if any(term in q for term in ("개인정보", "처리방침", "이메일", "전화번호", "보유 기간", "안전성", "정보주체")):
+        if "열람" in q or "정정" in q or "삭제" in q or "처리정지" in q:
+            return f"개인정보 처리방침에는 정보주체와 법정대리인의 열람, 정정, 삭제, 처리정지 요구와 행사방법을 안내해야 합니다. {citation}"
+        if "안전성" in q:
+            return f"개인정보 처리방침에는 개인정보의 안전성 확보조치에 관한 사항을 안내해야 합니다. {citation}"
+        if "보유" in q or "계속 보관" in q:
+            return f"개인정보 처리방침에는 개인정보 처리 목적과 처리 및 보유 기간을 안내해야 합니다. {citation}"
+        if "처리 목적" in q or "목적 항목" in q:
+            return f"개인정보 처리방침에는 개인정보 처리 목적을 포함해야 합니다. {citation}"
+        if "항목" in q:
+            return f"개인정보 처리방침에는 처리하는 개인정보의 항목을 포함해야 합니다. {citation}"
+        return f"개인정보 처리방침에는 개인정보 처리 목적을 포함해야 합니다. {citation}"
+
+    if any(term in q for term in ("한국소비자원", "1372", "상담", "품목", "전월", "전년", "시장 동향")):
+        if "목적" in q or "활용" in q or "정책" in q or "시장 동향" in q or "모니터링" in q:
+            return f"소비자상담 현황 데이터는 정책 수립과 시장 동향 모니터링에 활용될 수 있습니다. {citation}"
+        if "상위" in q or "몇 개" in q:
+            return f"품목별 상담 현황 데이터는 상위 다발 품목 500개의 상담 접수 현황을 제공합니다. {citation}"
+        if "전월" in q or "전년" in q:
+            return f"품목별 상담 현황에는 전월 대비 및 전년 동월 대비 상담 건수 증감률이 포함됩니다. {citation}"
+        return f"한국소비자원 품목별 상담 현황 데이터는 1372 소비자상담센터 접수 데이터를 기반으로 합니다. {citation}"
+
+    if any(term in q for term in ("소비자분쟁해결기준", "품질보증", "수리", "교환", "환급 비용", "같은 피해")):
+        if "같은 피해" in q or "선택" in q:
+            return f"동일한 피해에 대한 분쟁해결기준이 두 가지 이상이면 소비자가 선택하는 기준을 따릅니다. {citation}"
+        if "누가 부담" in q or "비용" in q:
+            return f"품질보증기간 동안의 수리, 교환, 환급 비용은 원칙적으로 사업자가 부담합니다. {citation}"
+        return f"소비자분쟁해결기준은 당사자 사이에 별도의 의사 표시가 없는 경우 적용되는 합의 또는 권고의 기준입니다. {citation}"
+
+    if any(term in q for term in ("피해구제", "사업자에게", "사업자", "30일", "90일", "위자료")):
+        if "위자료" in q:
+            return "문서에서 확인할 수 없습니다."
+        if "사업자" in q:
+            return f"피해구제가 접수되면 해당 사업자에게 접수 사실이 통보됩니다. {citation}"
+        if "30일" in q or "90일" in q or "며칠" in q:
+            return f"접수된 피해구제는 통상 30일 이내 처리하며, 사안에 따라 90일까지 연장될 수 있습니다. {citation}"
+        return f"피해구제 신청 전에는 먼저 소비자상담을 받아야 합니다. {citation}"
+
     return f"문서 기준으로는 명확한 답을 찾지 못했습니다. {citation}".strip()
 
 

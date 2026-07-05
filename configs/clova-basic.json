@@ -5,6 +5,6 @@
   "trust_mode": "all",
   "generator": "clova:HCX-005",
   "judge": "clova:HCX-005",
-  "chunk_size": 650,
+  "chunk_size": 450,
   "k": 3
 }

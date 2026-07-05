@@ -4,6 +4,6 @@
   "retriever": "chroma",
   "trust_mode": "trusted-only",
   "generator": "mock",
-  "chunk_size": 650,
+  "chunk_size": 450,
   "k": 3
 }

@@ -23,7 +23,7 @@ def run(args: argparse.Namespace) -> None:
     config_path = Path(args.config)
     config = load_config(config_path)
     docs = load_documents(Path(config.get("docs", DEFAULT_DOCS)))
-    chunks = split_documents(docs, int(config.get("chunk_size", 650)))
+    chunks = split_documents(docs, int(config.get("chunk_size", 450)))
     questions = load_questions(Path(config.get("questions", DEFAULT_QUESTIONS)))
     retriever = build_retriever(
         config.get("retriever", "lexical"),
