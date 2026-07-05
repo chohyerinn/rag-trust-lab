@@ -267,8 +267,8 @@ Claude API를 쓰려면 Anthropic 키와 Claude 모델명을 넣습니다.
 
 ```env
 ANTHROPIC_API_KEY=...
-LITELLM_MODEL=anthropic/claude-3-5-haiku-latest
-LITELLM_JUDGE_MODEL=anthropic/claude-3-5-haiku-latest
+LITELLM_MODEL=anthropic/claude-haiku-4-5-20251001
+LITELLM_JUDGE_MODEL=anthropic/claude-haiku-4-5-20251001
 ```
 
 관리자/운영자 Streamlit 화면에서는 키가 감지되면 LiteLLM 모델이 드롭다운에 나타납니다. CLI에서는 config의 `generator`와 `judge`를 바꿉니다.

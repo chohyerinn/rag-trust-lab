@@ -126,6 +126,18 @@ def _show_judge_status(judged) -> None:
         st.caption(f"답변 확인 모델: {judged.judge}")
 
 
+def _answer_with_fallback(question: Question, trusted_context, generator: str):
+    try:
+        return answer_question(question, trusted_context, generator), None
+    except Exception as exc:
+        fallback = answer_question(question, trusted_context, "mock")
+        message = (
+            f"{_generator_label(generator)} 호출에 실패해서 규칙 기반 데모 답변으로 대체했습니다. "
+            f"모델명, API 키, 잔액/쿼터를 확인하세요. 원인: {exc}"
+        )
+        return fallback, message
+
+
 docs, chunks, questions = _load_corpus()
 clova_key = _clova_key()
 litellm_model = _litellm_model()
@@ -181,7 +193,7 @@ if st.button("답변 생성", type="primary"):
     monitored = monitor_retriever.search(question.question, k=5)
     trusted_context = answer_retriever.search(question.question, k=3)
 
-    result = answer_question(question, trusted_context, generator)
+    result, generator_warning = _answer_with_fallback(question, trusted_context, generator)
     judged = judge_answer(result, question, judge_mode)
 
     risk_chunks = [c for c in monitored if _is_risky(c)]
@@ -189,6 +201,8 @@ if st.button("답변 생성", type="primary"):
     left, right = st.columns([3, 2])
     with left:
         st.subheader("답변")
+        if generator_warning:
+            st.warning(generator_warning)
         st.info(result.answer)
 
         evidence_heading = "확인한 공식 문서" if question.should_refuse else "답변에 사용한 공식 근거"

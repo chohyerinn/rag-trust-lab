@@ -129,6 +129,18 @@ def _show_judge_status(judged) -> None:
         st.caption(f"답변 확인 모델: {judged.judge}")
 
 
+def _answer_with_fallback(question: Question, retrieved, generator: str):
+    try:
+        return answer_question(question, retrieved, generator), None
+    except Exception as exc:
+        fallback = answer_question(question, retrieved, "mock")
+        message = (
+            f"{_generator_label(generator)} 호출에 실패해서 규칙 기반 데모 답변으로 대체했습니다. "
+            f"모델명, API 키, 잔액/쿼터를 확인하세요. 원인: {exc}"
+        )
+        return fallback, message
+
+
 docs, chunks, questions = _load_corpus()
 clova_key = _clova_key()
 litellm_model = _litellm_model()
@@ -195,7 +207,7 @@ run = st.button("실행", type="primary")
 if run:
     retriever = build_retriever("lexical", chunks, trust_mode=trust_mode)
     retrieved = retriever.search(question.question, k=k)
-    result = answer_question(question, retrieved, generator)
+    result, generator_warning = _answer_with_fallback(question, retrieved, generator)
     judged = judge_answer(result, question, judge_mode)
 
     left, right = st.columns([3, 2])
@@ -213,6 +225,8 @@ if run:
                 st.write(c.text)
 
         st.subheader("답변")
+        if generator_warning:
+            st.warning(generator_warning)
         st.info(result.answer)
 
     with right:
