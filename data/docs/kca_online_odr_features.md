@@ -6,7 +6,7 @@ version: current
 publisher: 한국소비자원
 source_url: https://www.kca.go.kr/odr/link/pg/pr/osPgStpSobiGuidW.do
 collection_method: official_page_summary
-review_status: human_checked_from_official_source
+review_status: official_source_curated
 selection_reason: 온라인 피해구제에서 가능한 조회·취하·자료제출 기능을 평가하기 위해
 tags: official,kca,odr,damage-relief
 ---

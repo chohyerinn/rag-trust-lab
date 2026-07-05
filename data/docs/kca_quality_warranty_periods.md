@@ -6,7 +6,7 @@ version: current
 publisher: 한국소비자원
 source_url: https://www.kca.go.kr/odr/pg/pi/osPgBjResolvW.do
 collection_method: official_page_summary
-review_status: human_checked_from_official_source
+review_status: official_source_curated
 selection_reason: 수리·교환·부품 보유 기간 질문의 공식 근거를 보강하기 위해
 tags: official,kca,warranty,dispute
 ---

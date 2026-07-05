@@ -59,6 +59,18 @@ def test_documents_and_questions_load():
     assert type_counts["untrusted_only"] >= 10
 
 
+def test_expected_terms_are_grounded_in_gold_sources():
+    docs = {doc.id: doc for doc in load_documents(ROOT / "data" / "docs")}
+    questions = load_questions(ROOT / "data" / "questions.json")
+    missing_terms = []
+    for question in questions:
+        evidence = "\n".join(docs[source_id].text for source_id in question.gold_sources)
+        for term in question.expected_terms:
+            if term not in evidence:
+                missing_terms.append((question.id, term, question.gold_sources))
+    assert missing_terms == []
+
+
 def test_trusted_mode_filters_poisoned_document():
     all_results = _run_config("all")
     trusted_results = _run_config("trusted-only")

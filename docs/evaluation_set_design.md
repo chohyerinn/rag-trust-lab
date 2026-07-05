@@ -29,9 +29,10 @@
 2. 공식 문서, 비공식-only 문서, 충돌 문서, prompt injection 문서, distractor 문서를 따로 설계했습니다.
 3. 각 질문에는 `evaluation_type`, `gold_sources`, `expected_terms`, `question_source`, `review_status`를 붙였습니다.
 4. 질문이 특정 문서 제목을 그대로 베끼지 않도록, 실제 사용자가 물어볼 법한 표현으로 바꿨습니다.
-5. smoke test를 실행해 검색 결과, 답변 커버리지, injection following, untrusted retrieval 지표가 유형별 의도와 맞는지 확인했습니다.
+5. `expected_terms`가 `gold_sources` 문서 원문에 실제 등장하는지 자동 점검했습니다.
+6. smoke test를 실행해 검색 결과, 답변 커버리지, injection following, untrusted retrieval 지표가 유형별 의도와 맞는지 확인했습니다.
 
-초안 작성과 정리에는 개발 도구를 보조로 사용할 수 있지만, 포트폴리오에서 중요한 것은 최종 평가 기준입니다. 이 repo에서는 질문을 "많이 만든 것"보다 `evaluation_type`별 목적, 공식 근거, 기대 키워드, 검수 상태를 남겨 재검토 가능하게 만든 점을 더 중요하게 봅니다.
+질문 초안 작성과 정리에는 LLM을 보조 도구로 사용했습니다. 포트폴리오에서 중요한 것은 "AI를 쓰지 않았다"가 아니라, 평가 기준과 검증 절차가 재검토 가능하게 남아 있는지입니다. 이 repo에서는 질문을 "많이 만든 것"보다 `evaluation_type`별 목적, 공식 근거, 기대 키워드, 검수 상태를 남겨 재검토 가능하게 만든 점을 더 중요하게 봅니다.
 
 ## Corpus Design
 
@@ -48,10 +49,10 @@
 
 ## What To Say In An Interview
 
-"질문을 그냥 늘린 게 아니라, 먼저 RAG 실패 유형을 다섯 가지로 나눴습니다. 공식 문서만으로 답 가능한 질문, 비공식 문서에만 답이 있는 질문, 공식/비공식 문서가 충돌하는 질문, 문서 내부 prompt injection 질문, 문서에 근거가 없는 질문으로 나누고 각 유형을 7-27문항까지 맞췄습니다. 각 질문에는 정답 문서와 기대 키워드, 출처, 검수 상태를 붙였고, mock smoke test로 지표가 의도대로 움직이는지 확인했습니다."
+"질문을 그냥 늘린 게 아니라, 먼저 RAG 실패 유형을 다섯 가지로 나눴습니다. 공식 문서만으로 답 가능한 질문, 비공식 문서에만 답이 있는 질문, 공식/비공식 문서가 충돌하는 질문, 문서 내부 prompt injection 질문, 문서에 근거가 없는 질문으로 나누고 각 유형을 7-27문항까지 맞췄습니다. 초안 작성에는 LLM을 보조로 썼지만, 각 질문에 정답 문서와 기대 키워드, 출처, 검수 상태를 붙였고 expected term이 실제 gold source 문서에 있는지 테스트로 확인했습니다. 이후 mock smoke test와 CLOVA 실측으로 지표가 의도대로 움직이는지 확인했습니다."
 
 ## Limitations
 
 - controlled testbed라 실제 운영 corpus 규모를 대표하지는 않습니다.
-- trust 라벨은 사람이 정한 것이므로, 실제 서비스에서는 문서 승인 workflow가 추가로 필요합니다.
+- trust 라벨은 프로젝트 안에서 수동으로 정한 것이므로, 실제 서비스에서는 문서 승인 workflow가 추가로 필요합니다.
 - mock generator 결과는 평가 파이프라인 회귀 확인용이며, 모델 성능 주장은 CLOVA/LiteLLM 실측 결과와 분리해야 합니다.

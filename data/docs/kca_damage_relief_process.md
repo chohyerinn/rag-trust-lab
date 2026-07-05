@@ -6,7 +6,7 @@ version: 2026-07-05-accessed
 publisher: 한국소비자원
 source_url: https://www.kca.go.kr/odr/link/pg/pr/osPgStpSobiGuidW.do
 collection_method: official_page_manual_curation
-review_status: human_checked_from_official_source
+review_status: official_source_curated
 selection_reason: 상담 현황 데이터만으로는 실제 민원 처리 흐름을 설명하기 어려워, 상담 이후 피해구제 신청·사업자 통보·사실조사·합의권고 흐름을 공식 절차 문서로 보강함
 tags: official,consumer,damage-relief,procedure,mediation
 ---

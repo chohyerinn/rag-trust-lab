@@ -6,7 +6,7 @@ version: 2025-09
 publisher: 법제처 찾기쉬운 생활법령정보
 source_url: https://www.easylaw.go.kr/CSP/FlDownload.laf?flSeq=1773619568640
 collection_method: official_pdf_summary
-review_status: human_checked_from_official_source
+review_status: official_source_curated
 selection_reason: 전자상거래와 달리 개인 간 거래는 일반 청약철회권이 제한될 수 있음을 구분하기 위해
 tags: official,secondhand,refund,consumer
 ---

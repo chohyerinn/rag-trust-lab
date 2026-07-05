@@ -6,7 +6,7 @@ version: 2026-07-05-accessed
 publisher: 한국소비자원
 source_url: https://www.kca.go.kr/odr/pg/pi/osPgBjResolvW.do
 collection_method: official_page_manual_curation
-review_status: human_checked_from_official_source
+review_status: official_source_curated
 selection_reason: 전자상거래 청약철회 외에도 수리·교환·환급 같은 일반 소비자분쟁 질문이 자주 발생하므로, 공식 분쟁해결 기준의 적용 범위를 corpus에 추가함
 tags: official,consumer,dispute-resolution,refund,repair
 ---

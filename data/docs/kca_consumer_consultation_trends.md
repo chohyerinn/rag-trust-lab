@@ -6,7 +6,7 @@ version: 2026-05-31
 publisher: 공공데이터포털 / 한국소비자원
 source_url: https://www.data.go.kr/data/15120072/fileData.do
 collection_method: official_data_portal_metadata_review
-review_status: human_checked_from_official_source
+review_status: official_source_curated
 selection_reason: 실제 상담 수요와 질문 주제를 정하는 근거가 필요해서, 1372 소비자상담센터 기반 공식 통계 메타데이터를 포함함
 tags: official,consumer,consultation,data
 ---

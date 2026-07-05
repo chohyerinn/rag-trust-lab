@@ -6,7 +6,7 @@ version: current
 publisher: 한국소비자원
 source_url: https://www.kca.go.kr/odr/link/pg/pr/osPgStpSobiGuidW.do
 collection_method: official_page_summary
-review_status: human_checked_from_official_source
+review_status: official_source_curated
 selection_reason: 피해구제 신청이 가능한 사건과 제외되는 사건을 구분하기 위해
 tags: official,kca,damage-relief,exclusion
 ---

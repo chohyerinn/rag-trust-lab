@@ -6,7 +6,7 @@ version: 2022-03
 publisher: 개인정보보호위원회
 source_url: https://www.privacy.go.kr/front/bbs/bbsView.do?bbsNo=BBSMSTR_000000000049&bbscttNo=13156
 collection_method: official_guide_summary
-review_status: human_checked_from_official_source
+review_status: official_source_curated
 selection_reason: 개인정보 수집 동의 질문에서 필수/선택 동의와 명확한 고지를 구분하기 위해
 tags: official,privacy,consent
 ---

@@ -6,7 +6,7 @@ version: 2026-07-05-accessed
 publisher: 법제처 찾기쉬운 생활법령정보
 source_url: https://www.easylaw.go.kr/CSP/CnpClsMain.laf?ccfNo=4&cciNo=1&cnpClsNo=2&csmSeq=835
 collection_method: official_page_manual_curation
-review_status: human_checked_from_official_source
+review_status: official_source_curated
 selection_reason: 환불·청약철회 질문은 상담 RAG에서 자주 나오는 고위험 답변 영역이고, 법제처 생활법령은 일반 사용자가 이해하기 쉬운 공식 설명을 제공하기 때문
 tags: official,refund,consumer,ecommerce
 ---

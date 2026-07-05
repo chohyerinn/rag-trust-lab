@@ -6,7 +6,7 @@ version: current
 publisher: 개인정보보호위원회 개인정보 포털
 source_url: https://www.privacy.go.kr/front/contents/cntntsView.do?contsNo=106
 collection_method: official_page_summary
-review_status: human_checked_from_official_source
+review_status: official_source_curated
 selection_reason: 개인정보 취급자 교육과 내부 관리 질문을 답변 범위에 포함하기 위해
 tags: official,privacy,training
 ---

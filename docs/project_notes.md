@@ -34,11 +34,16 @@ CLOVA config에서는 생성 모델과 judge를 모두 HCX-005로 쓸 수 있다
 
 trusted filtering을 켰을 때 accuracy가 오르거나 injection-following이 줄어드는 것처럼 보일 수 있지만, 문항 수가 작으면 우연일 수 있다. 그래서 `mini-agent-harness`에서 썼던 paired bootstrap CI와 McNemar test를 가져와서 유의성을 같이 보도록 했다.
 
+### 5. AI-assisted 질문 확장을 어떻게 설명할지
+
+질문 수를 늘리는 과정에서 LLM을 초안 작성 보조로 썼다. 이걸 숨기면 README의 provenance 설명과 실제 작업 방식이 어긋나기 때문에, 질문 메타데이터와 문서에 `llm_assisted_draft`와 `source_terms_audited`를 명시했다. 중요한 것은 AI 사용 여부가 아니라, 질문별 `gold_sources`, `expected_terms`, `evaluation_type`을 남기고 expected term이 실제 source 문서에 있는지 검증하는 과정이라고 정리했다.
+
 ## How I fixed them
 
 - RAG 결과를 retrieval, generation, judge 단계로 나눴다.
 - trusted corpus를 공식 출처 기반 문서로 바꾸고, 출처와 검수 상태를 metadata로 남겼다.
 - 질문셋에도 question_source와 review_status를 추가했다.
+- 질문 초안 작성에는 LLM을 보조로 사용했음을 명시하고, source term 검수 로그를 `docs/question_review_log.md`에 남겼다.
 - `recall@k`, `MRR`, `grounded_rate`, `injection_following_rate`, `poisoned_retrieved_rate`를 따로 기록했다.
 - `basic`과 `trusted` config를 분리해서 같은 질문 세트에서 비교했다.
 - mock generator는 실패를 재현하기 쉽게 deterministic하게 만들었다.

@@ -6,7 +6,7 @@ version: 2026-07-05-accessed
 publisher: 개인정보보호위원회 개인정보 포털
 source_url: https://www.privacy.go.kr/cmm/fms/FileDown.do?atchFileId=FILE_000000000835861&fileSn=0&nttId=9411&toolCntKey_1=&toolVer=
 collection_method: official_guide_manual_curation
-review_status: human_checked_from_official_source
+review_status: official_source_curated
 selection_reason: 개인정보 처리방침 문서가 “무엇을 공개해야 하는지”를 다룬다면, 이 문서는 실제 시스템 운영에서 접근권한·접속기록·암호화 같은 보호조치를 묻는 질문을 다루기 위해 선택함
 tags: official,privacy,security,access-control,logging,encryption
 ---

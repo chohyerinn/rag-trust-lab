@@ -13,6 +13,7 @@ DEFAULT_QUESTIONS = ROOT / "data" / "questions.json"
 
 
 def _parse_front_matter(text: str) -> tuple[dict[str, str], str]:
+    text = text.lstrip("\ufeff")
     if not text.startswith("---"):
         return {}, text.strip()
     end = text.find("\n---", 3)

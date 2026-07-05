@@ -6,7 +6,7 @@ version: 2026-04-accessed
 publisher: 개인정보보호위원회 개인정보 포털
 source_url: https://www.privacy.go.kr/front/bbs/bbsView.do?bbsNo=BBSMSTR_000000000049&bbscttNo=20885
 collection_method: official_guide_manual_curation
-review_status: human_checked_from_official_source
+review_status: official_source_curated
 selection_reason: 개인정보 처리방침은 AI 상담·운영 서비스가 반드시 근거를 확인해야 하는 준법 영역이고, 개인정보보호위원회 지침은 작성 항목을 공식적으로 설명하기 때문
 tags: official,privacy,personal-data,policy
 ---

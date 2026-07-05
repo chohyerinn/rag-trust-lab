@@ -6,7 +6,7 @@ version: 2024
 publisher: 개인정보보호위원회
 source_url: https://www.privacy.go.kr/cmm/fms/FileDown.do?atchFileId=ATCH_000000000893247&fileSn=1
 collection_method: official_report_summary
-review_status: human_checked_from_official_source
+review_status: official_source_curated
 selection_reason: 해외 클라우드와 국외 이전 질문에서 동의·법적 근거·고지를 확인하기 위해
 tags: official,privacy,overseas-transfer
 ---
