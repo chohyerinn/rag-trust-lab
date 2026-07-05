@@ -10,7 +10,10 @@ from collections import Counter
 from pathlib import Path
 from typing import Iterable
 
+from .env import load_env_file
 from .models import Chunk
+
+load_env_file()
 
 TOKEN_RE = re.compile(r"[A-Za-z0-9가-힣]+")
 
@@ -132,6 +135,11 @@ class ChromaRetriever:
                 "trusted": c.trusted,
                 "version": c.version,
                 "tags": ",".join(c.tags),
+                "publisher": c.publisher,
+                "source_url": c.source_url,
+                "collection_method": c.collection_method,
+                "review_status": c.review_status,
+                "selection_reason": c.selection_reason,
             }
             for c in self.chunks
         ]
@@ -158,6 +166,11 @@ class ChromaRetriever:
                     trusted=bool(meta["trusted"]),
                     version=meta.get("version", ""),
                     tags=tuple(t for t in meta.get("tags", "").split(",") if t),
+                    publisher=meta.get("publisher", ""),
+                    source_url=meta.get("source_url", ""),
+                    collection_method=meta.get("collection_method", ""),
+                    review_status=meta.get("review_status", ""),
+                    selection_reason=meta.get("selection_reason", ""),
                     rank=idx,
                     score=round(float(score), 4),
                 )

@@ -11,6 +11,11 @@ class Document:
     trusted: bool = True
     version: str = ""
     tags: tuple[str, ...] = field(default_factory=tuple)
+    publisher: str = ""
+    source_url: str = ""
+    collection_method: str = ""
+    review_status: str = ""
+    selection_reason: str = ""
 
 
 @dataclass(frozen=True)
@@ -22,6 +27,11 @@ class Chunk:
     trusted: bool
     version: str = ""
     tags: tuple[str, ...] = field(default_factory=tuple)
+    publisher: str = ""
+    source_url: str = ""
+    collection_method: str = ""
+    review_status: str = ""
+    selection_reason: str = ""
     rank: int = 0
     score: float = 0.0
 
@@ -34,6 +44,8 @@ class Question:
     expected_terms: tuple[str, ...]
     category: str = "normal"
     should_refuse: bool = False
+    question_source: str = ""
+    review_status: str = ""
 
 
 @dataclass

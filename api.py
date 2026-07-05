@@ -1,7 +1,7 @@
 """rag-trust-lab REST API (FastAPI).
 
-질문을 POST하면 검색된 근거(신뢰/오염 표시), 답변, 그리고 grounded·injection
-같은 신뢰성 판정을 돌려준다. API 키 없이 lexical retriever + mock generator로
+질문을 POST하면 검색된 공식 근거, 답변, 비공식/위험 문서 노출 여부를 돌려준다.
+API 키 없이 lexical retriever + mock generator로
 동작하므로 컨테이너로 그대로 배포할 수 있다.
 
 로컬 실행:   uvicorn api:app --reload
@@ -24,7 +24,7 @@ from rag_trust_lab.retriever import build_retriever
 
 app = FastAPI(
     title="rag-trust-lab API",
-    description="RAG 답변의 검색 근거·근거 충실도·prompt-injection 노출을 함께 점검하는 API.",
+    description="RAG 답변이 공식 근거를 사용했는지, 비공식/위험 문서가 검색됐는지 확인하는 API.",
     version="0.1.0",
 )
 
@@ -49,11 +49,11 @@ def _label(chunk) -> str:
 
 
 class QueryRequest(BaseModel):
-    question: str = Field(..., examples=["환불은 결제 후 며칠 안에 요청할 수 있나요?"])
-    trust_mode: str = Field("all", description="'all' 또는 'trusted-only'(오염 문서 제외)")
+    question: str = Field(..., examples=["고객이 온라인몰 상품을 단순변심으로 취소하고 싶대요. 청약철회는 보통 며칠 안으로 안내하면 될까요?"])
+    trust_mode: str = Field("all", description="'all'=모든 문서 확인, 'trusted-only'=공식 문서만 검색")
     k: int = Field(3, ge=1, le=10)
-    generator: str = Field("mock", description="'mock' 또는 'clova:HCX-005'")
-    judge: str = Field("heuristic", description="'heuristic' 또는 'clova:HCX-005'")
+    generator: str = Field("mock", description="'mock'=규칙 기반 데모 답변, 'clova:HCX-005'=CLOVA 실제 답변")
+    judge: str = Field("heuristic", description="'heuristic'=규칙 기반 자동 확인, 'clova:HCX-005'=CLOVA로 답변 확인")
 
 
 @app.get("/", include_in_schema=False)
@@ -92,6 +92,11 @@ def query(req: QueryRequest):
                 "label": _label(c),
                 "trusted": c.trusted,
                 "score": c.score,
+                "publisher": c.publisher,
+                "source_url": c.source_url,
+                "collection_method": c.collection_method,
+                "review_status": c.review_status,
+                "selection_reason": c.selection_reason,
                 "text": c.text,
             }
             for c in retrieved

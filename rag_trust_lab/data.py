@@ -42,12 +42,17 @@ def load_documents(path: Path = DEFAULT_DOCS) -> list[Document]:
                 trusted=meta.get("trusted", "true").lower() == "true",
                 version=meta.get("version", ""),
                 tags=tags,
+                publisher=meta.get("publisher", ""),
+                source_url=meta.get("source_url", ""),
+                collection_method=meta.get("collection_method", ""),
+                review_status=meta.get("review_status", ""),
+                selection_reason=meta.get("selection_reason", ""),
             )
         )
     return docs
 
 
-def split_documents(docs: list[Document], chunk_size: int = 650) -> list[Chunk]:
+def split_documents(docs: list[Document], chunk_size: int = 450) -> list[Chunk]:
     chunks: list[Chunk] = []
     for doc in docs:
         parts = [p.strip() for p in re.split(r"\n\s*\n", doc.text) if p.strip()]
@@ -75,6 +80,11 @@ def _chunk(doc: Document, idx: int, text: str) -> Chunk:
         trusted=doc.trusted,
         version=doc.version,
         tags=doc.tags,
+        publisher=doc.publisher,
+        source_url=doc.source_url,
+        collection_method=doc.collection_method,
+        review_status=doc.review_status,
+        selection_reason=doc.selection_reason,
     )
 
 
@@ -88,6 +98,8 @@ def load_questions(path: Path = DEFAULT_QUESTIONS) -> list[Question]:
             expected_terms=tuple(item.get("expected_terms", [])),
             category=item.get("category", "normal"),
             should_refuse=bool(item.get("should_refuse", False)),
+            question_source=item.get("question_source", ""),
+            review_status=item.get("review_status", ""),
         )
         for item in raw
     ]
