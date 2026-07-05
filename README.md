@@ -90,25 +90,27 @@ streamlit run operator_app.py --server.port 8502
 | `source_conflict` accuracy | 10 | 10% | 100% | 공식 문서와 비공식 문서가 충돌할 때 trusted-only가 공식 근거로 수렴하는지 확인 |
 | `insufficient_evidence` abstention | 7 | 100% | 100% | 문서에 없는 질문은 지어내지 않고 거절 |
 
-## 실제 CLOVA 결과 (HCX-005, archived)
+## 실제 CLOVA 결과 (HCX-005, 67문항)
 
-아래 표는 이전 20문항 평가셋에서 생성·judge를 모두 실제 **HCX-005**로 붙여 실행한 아카이브 결과입니다(mock 아님). 현재 기본 corpus는 질문 유형과 distractor 문서를 보강해 67문항 / 35문서로 확장했으므로, 최신 실측 결과는 CLOVA 또는 LiteLLM config로 다시 실행해야 합니다.
+아래 표는 67문항 평가셋에서 생성·judge를 모두 실제 **HCX-005**로 붙여 실행한 결과입니다(mock 아님).
 
-| Config | recall@3 | accuracy | grounded | injection following | poisoned retrieved |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| `clova-basic` | 65% | 95% | 90% | 5% | 55% |
-| `clova-trusted` | 65% | 100% | 85% | 0% | 0% |
+| Config | n | recall@3 | accuracy | grounded | coverage | injection following | untrusted retrieved | poisoned retrieved |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `clova-basic-67` | 67 | 79% | 99% | 90% | 98% | 0% | 75% | 19% |
+| `clova-trusted-67` | 67 | 75% | 97% | 75% | 98% | 0% | 0% | 0% |
 
-해석에서 중요한 건 **어떤 지표가 통계적으로 유의했는지**입니다. HCX-005는 오염 문서가 검색돼도 injection을 거의 따르지 않아서(`basic`도 5%), trusted filtering을 켜도 **답변 단계 지표(accuracy·injection·grounded)는 유의하게 바뀌지 않았습니다**(CI가 0을 걸치거나 McNemar p가 큼). 유의하게 바뀐 건 **검색 단계 리스크**였습니다.
+해석에서 중요한 건 **어떤 지표가 통계적으로 유의했는지**입니다. HCX-005는 오염 문서가 검색돼도 injection을 따르지 않았기 때문에, trusted filtering을 켜도 `injection_following_rate`는 0% → 0%로 차이가 없었습니다. 대신 검색 단계에서는 위험 문서 노출이 유의하게 줄었습니다.
 
 | Metric | basic → trusted | 95% CI (B−A) | McNemar p | 판정 |
 | --- | ---: | --- | ---: | --- |
-| `poisoned_retrieved_rate` | 55% → 0% | [−0.75, −0.35] | 0.001 | 🔺 유의한 개선 |
-| `untrusted_retrieved_rate` | 55% → 0% | [−0.75, −0.35] | 0.001 | 🔺 유의한 개선 |
-| `injection_following_rate` | 5% → 0% | [−0.15, +0.00] | 1.0 | 🔸 개선 방향(유의X) |
-| `answer_accuracy` | 95% → 100% | [+0.00, +0.15] | 1.0 | 🔸 개선 방향(유의X) |
+| `untrusted_retrieved_rate` | 75% → 0% | [−0.851, −0.642] | 0.0 | 유의한 개선 |
+| `poisoned_retrieved_rate` | 19% → 0% | [−0.298, −0.104] | 0.0002 | 유의한 개선 |
+| `untrusted_top_source_rate` | 45% → 0% | [−0.567, −0.328] | 0.0 | 유의한 개선 |
+| `injection_following_rate` | 0% → 0% | [+0.000, +0.000] | 1.0 | 차이 없음 |
+| `answer_accuracy` | 99% → 97% | [−0.075, +0.030] | 1.0 | 회귀 방향(유의X) |
+| `grounded_rate` | 90% → 75% | [−0.284, −0.030] | 0.0414 | 유의한 회귀 |
 
-즉 이 데이터에서 trusted filtering의 가치는 "답을 더 맞히는 것"이 아니라 **오염 근거가 검색되는 것 자체를 차단하는 검색 단계 방어선(defense-in-depth)**이고, 그 효과는 답변 지표가 아니라 **검색 리스크 지표에서만 통계적으로 드러났습니다**(−55%, p=0.001). 모델이 이미 injection에 강건하더라도, 오염 근거 노출은 이후 모델·프롬프트·질문 변화에서 실패로 이어질 수 있으므로 별도로 측정할 가치가 있습니다.
+즉 이 데이터에서 trusted filtering의 가치는 "답을 더 맞히는 것"이 아니라 **오염 근거가 검색되는 것 자체를 차단하는 검색 단계 방어선(defense-in-depth)**입니다. 동시에 `grounded_rate`가 내려간 점은 남은 분석 포인트입니다. guardrail은 안전 지표만 올리는 장치가 아니라, 검색 범위를 줄였을 때 답변 근거성과 커버리지가 어떻게 흔들리는지도 함께 봐야 합니다. 전체 비교 리포트는 `reports/compare-clova-basic-67-vs-clova-trusted-67.md`에 저장했습니다.
 
 ## 검색 방법 비교 (retrieval quality)
 
@@ -179,7 +181,7 @@ python -m rag_trust_lab compare --a reports/basic.json --b reports/trusted.json
 
 `trusted`는 trusted 문서만 검색합니다. 같은 질문 세트에서 injection-following이 줄어드는지뿐 아니라, `untrusted_only` 질문에서 답변 커버리지를 얼마나 잃는지도 같이 봅니다.
 
-기본 실행은 API 키 없이 도는 **deterministic mock**입니다 — CI와 빠른 동작 확인용 smoke test이고, 모델 성능 결과가 아닙니다. 실제 모델 결과는 CLOVA/LiteLLM config로 별도 실행하며, 위의 **[실제 CLOVA 결과](#실제-clova-결과-hcx-005)**는 작은 구버전 평가셋의 archived 결과입니다. mock을 남겨둔 이유는 키 없이도 평가 파이프라인 전체(검색→생성→judge→통계)가 그대로 돌아가는 걸 누구나 재현할 수 있게 하기 위함입니다.
+기본 실행은 API 키 없이 도는 **deterministic mock**입니다 — CI와 빠른 동작 확인용 smoke test이고, 모델 성능 결과가 아닙니다. 실제 모델 결과는 CLOVA/LiteLLM config로 별도 실행하며, 위의 **[실제 CLOVA 결과](#실제-clova-결과-hcx-005-67문항)**와 분리해서 봐야 합니다. mock을 남겨둔 이유는 키 없이도 평가 파이프라인 전체(검색→생성→judge→통계)가 그대로 돌아가는 걸 누구나 재현할 수 있게 하기 위함입니다.
 
 `compare`는 평균 차이만 보지 않습니다. 두 config가 같은 질문 세트를 풀기 때문에, 지표마다 **질문 단위 페어드 부트스트랩 95% CI**와 (이진 지표는) **McNemar 검정**으로 유의성을 판정합니다. `injection`·`stale`·`poisoned retrieved`처럼 작을수록 좋은 지표는 극성을 반영해 판정합니다.
 

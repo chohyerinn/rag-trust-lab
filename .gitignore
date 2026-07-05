@@ -7,3 +7,4 @@ reports/*.json
 reports/*.md
 !reports/.gitkeep
 !reports/compare-basic-tradeoff-vs-trusted-tradeoff.md
+!reports/compare-clova-basic-67-vs-clova-trusted-67.md
