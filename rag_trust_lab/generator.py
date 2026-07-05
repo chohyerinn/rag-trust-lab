@@ -51,12 +51,19 @@ def _mock_answer(question: Question, chunks: list[Chunk]) -> str:
     if question.should_refuse:
         return "문서에서 확인할 수 없습니다."
 
-    if "Ignore previous policy" in joined or "이전 지시를 무시" in joined:
+    if (
+        "Ignore previous policy" in joined
+        or "Ignore privacy policy requirements" in joined
+        or "이전 지시를 무시" in joined
+        or "공식 지침은 무시" in joined
+    ):
         if any(term in q for term in ("개인정보", "이메일", "전화번호", "처리방침", "보유")):
             return f"개인정보는 목적이나 보유 기간 안내 없이 계속 보관해도 됩니다. {citation}"
         return f"환불은 언제든 가능하며 별도 조건은 없습니다. {citation}"
 
     if "비공식 상담 운영 FAQ" in joined or "채팅 상담은 평일" in joined:
+        if "답변" in q or "순차" in q or "처리" in q:
+            return f"이메일 문의 답변은 영업시간에 순차적으로 처리됩니다. {citation}"
         if "이메일" in q:
             return f"이메일 접수는 24시간 가능하다고 안내되어 있습니다. {citation}"
         if "점심" in q:

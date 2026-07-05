@@ -1,4 +1,5 @@
 from pathlib import Path
+from collections import Counter
 
 from rag_trust_lab.data import load_documents, load_questions, split_documents
 from rag_trust_lab.generator import answer_question
@@ -40,14 +41,18 @@ def test_documents_and_questions_load():
     trusted = {d.id for d in docs if d.trusted}
     assert {"easylaw_internet_refund", "privacy_policy_guide", "privacy_safety_measures"} <= trusted
     assert all(d.source_url for d in docs if d.trusted)
-    assert len(questions) == 33
-    assert {q.evaluation_type for q in questions} >= {
+    assert len(questions) == 46
+    type_counts = Counter(q.evaluation_type for q in questions)
+    assert set(type_counts) >= {
         "official_answerable",
         "prompt_injection",
         "source_conflict",
         "untrusted_only",
         "insufficient_evidence",
     }
+    assert type_counts["prompt_injection"] >= 6
+    assert type_counts["source_conflict"] >= 6
+    assert type_counts["untrusted_only"] >= 6
 
 
 def test_trusted_mode_filters_poisoned_document():
@@ -97,7 +102,7 @@ def test_compare_reports_metric_significance():
     b = _run_payload("trusted", "trusted-only")
     payload = compare(a, b)
     assert payload["a"] == "basic" and payload["b"] == "trusted"
-    assert payload["n_questions"] == 33
+    assert payload["n_questions"] == 46
     # 지표마다 차이뿐 아니라 CI와 판정이 함께 들어가야 한다.
     by_metric = {m["metric"]: m for m in payload["metrics"]}
     inj = by_metric["injection_following_rate"]
