@@ -1,6 +1,8 @@
 # rag-trust-lab
 
 [![CI](https://github.com/chohyerinn/rag-trust-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/chohyerinn/rag-trust-lab/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](.github/workflows/ci.yml)
+[![Docker](https://img.shields.io/badge/docker-build-2496ED?logo=docker&logoColor=white)](Dockerfile)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 RAG 답변이 맞았는지만 보는 대신, **안전한 검색 범위가 답변 커버리지를 얼마나 희생하는지(safety tax), 그 희생을 운영형 guardrail로 어떻게 관찰할지**를 보는 작은 평가 하니스입니다.
@@ -10,6 +12,38 @@ RAG 답변이 맞았는지만 보는 대신, **안전한 검색 범위가 답변
 *운영자 화면: 답변 생성에는 공식 문서만 사용하고, 검색 단계에서 올라온 비공식/위험 문서는 답변에서 제외한 뒤 건수로 표시합니다. 답변 확인(judge)은 생성 모델과 다른 모델로 분리해 사후 점검합니다.*
 
 큰 RAG 플랫폼을 만들기보다, 채용공고에서 자주 보이는 RAG 키워드를 작은 완성물 안에 넣는 쪽으로 범위를 줄였습니다.
+
+
+**Demo/API Docs:** [https://rag-trust-lab.onrender.com/docs](https://rag-trust-lab.onrender.com/docs)
+**Latest smoke report:** [reports/latest-summary.md](reports/latest-summary.md)
+
+- CI runs `ruff`, `pytest`, and smoke evaluation on Python 3.11/3.12.
+- Docker job builds the FastAPI/Swagger image on every push and pull request.
+- `make test`, `make eval-smoke`, and `make report` reproduce the same checks locally.
+
+## Quick Start
+
+```bash
+python -m pip install -e ".[test]"
+make test
+make eval-smoke
+make report
+```
+
+Run the API container locally:
+
+```bash
+make docker-build
+docker run -p 8000:8000 rag-trust-lab
+# http://localhost:8000/docs
+```
+
+| Command | What it proves |
+|---|---|
+| `make test` | core metrics, judge/report behavior, regression helpers |
+| `make eval-smoke` | RAG pipeline runs end-to-end with keyless mock generation |
+| `make report` | writes `reports/latest-summary.md` from the latest smoke comparison |
+| `make docker-build` | FastAPI + Swagger container builds successfully |
 
 - 검색기 4종: lexical / BM25 / **dense(CLOVA bge-m3 임베딩)** / **hybrid(BM25+dense, RRF)**
 - 기본 실행은 API 키 없는 lexical retriever + deterministic mock generator

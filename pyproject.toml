@@ -18,8 +18,16 @@ rag = [
   "litellm>=1.40"
 ]
 test = [
-  "pytest>=8"
+  "pytest>=8",
+  "ruff>=0.6"
 ]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E501"]
 
 [tool.setuptools.packages.find]
 where = ["."]

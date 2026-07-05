@@ -11,3 +11,4 @@ reports/*.md
 !reports/clova-basic-xjudge.md
 !reports/clova-trusted-xjudge.md
 !reports/compare-clova-basic-xjudge-vs-clova-trusted-xjudge.md
+!reports/latest-summary.md
