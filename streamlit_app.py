@@ -44,6 +44,33 @@ def _clova_key() -> str | None:
     return key
 
 
+def _secret_value(name: str) -> str | None:
+    value = os.environ.get(name)
+    if value:
+        return value
+    try:
+        secret = st.secrets.get(name)  # type: ignore[assignment]
+    except Exception:
+        return None
+    return str(secret) if secret else None
+
+
+def _litellm_model(env_name: str = "LITELLM_MODEL") -> str | None:
+    provider_keys = (
+        "OPENAI_API_KEY",
+        "ANTHROPIC_API_KEY",
+        "GEMINI_API_KEY",
+        "COHERE_API_KEY",
+        "AZURE_API_KEY",
+    )
+    if not any(_secret_value(name) for name in provider_keys):
+        return None
+    model = _secret_value(env_name)
+    if model:
+        return model
+    return "gpt-4o-mini"
+
+
 def _chunk_label(chunk) -> str:
     tags = set(getattr(chunk, "tags", ()) or ())
     if "poison" in tags or "injection" in tags:
@@ -75,6 +102,8 @@ def _generator_label(value: str) -> str:
         return "규칙 기반 데모 답변"
     if value.startswith("clova:"):
         return "CLOVA 실제 답변"
+    if value.startswith("litellm:"):
+        return f"LiteLLM 실제 답변 ({value.split(':', 1)[1]})"
     return value
 
 
@@ -83,11 +112,15 @@ def _judge_label(value: str) -> str:
         return "규칙 기반 자동 확인"
     if value.startswith("clova:"):
         return "CLOVA로 답변 확인"
+    if value.startswith("litellm:"):
+        return f"LiteLLM으로 답변 확인 ({value.split(':', 1)[1]})"
     return value
 
 
 docs, chunks, questions = _load_corpus()
 clova_key = _clova_key()
+litellm_model = _litellm_model()
+litellm_judge_model = _litellm_model("LITELLM_JUDGE_MODEL") or litellm_model
 
 st.title("🔎 RAG 관리자 평가 서버")
 st.caption(
@@ -110,8 +143,14 @@ with st.sidebar:
     if clova_key:
         gen_options.append("clova:HCX-005")
         judge_options.append("clova:HCX-005")
-    else:
-        st.info("CLOVA 키가 없어 mock generator로 동작합니다. (배포 시 secrets에 키를 넣으면 실제 모델 사용)")
+    if litellm_model:
+        gen_options.append(f"litellm:{litellm_model}")
+    if litellm_judge_model:
+        judge_options.append(f"litellm:{litellm_judge_model}")
+    if not clova_key and not litellm_model:
+        st.info("모델 API 키가 없어 mock generator로 동작합니다. (.env에 CLOVA 또는 OPENAI/LiteLLM 키를 넣으면 실제 모델 사용)")
+    elif not litellm_model:
+        st.caption("LiteLLM은 OPENAI_API_KEY 같은 provider 키가 있으면 선택지에 표시됩니다.")
     generator = st.selectbox("답변 생성", gen_options, format_func=_generator_label)
     judge_mode = st.selectbox("답변 확인", judge_options, format_func=_judge_label)
 

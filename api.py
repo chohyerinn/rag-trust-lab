@@ -52,8 +52,14 @@ class QueryRequest(BaseModel):
     question: str = Field(..., examples=["고객이 온라인몰 상품을 단순변심으로 취소하고 싶대요. 청약철회는 보통 며칠 안으로 안내하면 될까요?"])
     trust_mode: str = Field("all", description="'all'=모든 문서 확인, 'trusted-only'=공식 문서만 검색")
     k: int = Field(3, ge=1, le=10)
-    generator: str = Field("mock", description="'mock'=규칙 기반 데모 답변, 'clova:HCX-005'=CLOVA 실제 답변")
-    judge: str = Field("heuristic", description="'heuristic'=규칙 기반 자동 확인, 'clova:HCX-005'=CLOVA로 답변 확인")
+    generator: str = Field(
+        "mock",
+        description="'mock'=규칙 기반 데모 답변, 'clova:HCX-005'=CLOVA 실제 답변, 'litellm:gpt-4o-mini'=LiteLLM 실제 답변",
+    )
+    judge: str = Field(
+        "heuristic",
+        description="'heuristic'=규칙 기반 자동 확인, 'clova:HCX-005'=CLOVA로 답변 확인, 'litellm:gpt-4o-mini'=LiteLLM으로 확인",
+    )
 
 
 @app.get("/", include_in_schema=False)

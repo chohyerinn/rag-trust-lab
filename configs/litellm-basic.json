@@ -1,0 +1,10 @@
+{
+  "docs": "data/docs",
+  "questions": "data/questions.json",
+  "retriever": "lexical",
+  "trust_mode": "all",
+  "generator": "litellm:gpt-4o-mini",
+  "judge": "litellm:gpt-4o-mini",
+  "chunk_size": 450,
+  "k": 3
+}

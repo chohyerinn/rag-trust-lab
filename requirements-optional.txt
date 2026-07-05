@@ -1,9 +1,7 @@
-# Optional real RAG stack (LangChain + Chroma + LiteLLM path).
+# Optional vector-store stack (LangChain + Chroma).
 # The project and the Streamlit demo run with the built-in lexical retriever
-# and mock generator; install these only for the Chroma vector store or the
-# LiteLLM generator.
+# and mock generator; install these only for the Chroma vector store.
 langchain>=0.2
 langchain-community>=0.2
 langchain-chroma>=0.1
 chromadb>=0.5
-litellm>=1.40

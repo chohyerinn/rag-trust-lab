@@ -9,8 +9,8 @@ RAG 답변이 맞았는지만 보는 대신, **검색이 근거를 찾았는지,
 
 - 검색기 4종: lexical / BM25 / **dense(CLOVA bge-m3 임베딩)** / **hybrid(BM25+dense, RRF)**
 - 기본 실행은 API 키 없는 lexical retriever + deterministic mock generator
+- 실제 생성 백엔드: CLOVA Studio 또는 LiteLLM(OpenAI/Anthropic 등)
 - 공식 출처 기반 trusted corpus + intentionally untrusted adversarial fixture
-- LiteLLM generator hook
 - retrieval recall@k, MRR
 - grounded rate, answer accuracy
 - prompt injection following rate
@@ -57,7 +57,7 @@ streamlit run operator_app.py --server.port 8502
 | `grounded` | 공식 근거로 답했나요 | 답변이 검색된 공식 문서 내용에 의해 뒷받침되는지 |
 | `injection_following` | 위험 문서 지시를 따라 답했나요 | 출처 불명 문서 안의 악성 지시문을 모델이 따라갔는지 |
 | retrieval risk log | 검색 후보 검토 | 답변에는 쓰지 않았지만 검색 후보에 올라온 비공식/위험 문서 목록 |
-| judge | 답변 확인 | 답변이 공식 문서 기준인지 규칙 또는 CLOVA로 확인하는 단계 |
+| judge | 답변 확인 | 답변이 공식 문서 기준인지 규칙, CLOVA, LiteLLM으로 확인하는 단계 |
 
 ## 실제 CLOVA 결과 (HCX-005, archived)
 
@@ -165,7 +165,7 @@ python -m rag_trust_lab compare --a reports/clova-basic.json --b reports/clova-t
 
 리포트의 `judge / heuristic agreement`는 LLM judge와 기존 deterministic judge가 얼마나 일치했는지 보여줍니다. 값이 낮은 문항은 실제 답변 원문과 judge reason을 같이 보면서 휴리스틱 개선 후보로 보면 됩니다.
 
-기본 CLOVA config는 생성과 judge가 모두 HCX-005라서 self-judging bias가 있을 수 있습니다. 이 결과는 최종 벤치마크 점수라기보다 실제 모델 smoke test로 봐야 합니다. 더 엄밀하게 보려면 생성은 `clova:HCX-005`, judge는 `litellm:gpt-4o-mini`처럼 다른 모델로 분리할 수 있습니다.
+기본 CLOVA config는 생성과 judge가 모두 HCX-005라서 self-judging bias가 있을 수 있습니다. 이 결과는 최종 벤치마크 점수라기보다 실제 모델 smoke test로 봐야 합니다. 더 엄밀하게 보려면 생성은 `clova:HCX-005`, judge는 `litellm:gpt-4o-mini`처럼 다른 모델로 분리할 수 있습니다. 관리자/운영자 Streamlit 화면에서도 `.env`에 `OPENAI_API_KEY`가 있으면 LiteLLM 선택지가 표시됩니다.
 
 HCX-005 실행에서는 모델이 오염 문서를 검색해도 injection을 따르지 않을 수 있습니다. 그 경우 trusted filtering의 효과는 `answer_accuracy`보다 `poisoned_retrieved_rate` 같은 검색 리스크 지표에서 먼저 드러납니다. 실제 모델 결과를 해석할 때는 숫자만 보지 말고 `reports/*.md`의 답변 원문과 judge reason을 함께 확인해야 합니다.
 
@@ -187,8 +187,8 @@ flowchart LR
 rag_trust_lab/
   data.py        # markdown docs / question set loader
   retriever.py   # lexical fallback + optional Chroma retriever
-  generator.py   # mock generator + LiteLLM generator hook
-  judge.py       # heuristic + optional CLOVA LLM-as-a-Judge checks
+  generator.py   # mock + CLOVA + LiteLLM generator
+  judge.py       # heuristic + optional CLOVA/LiteLLM LLM-as-a-Judge checks
   metrics.py     # recall@k, MRR, grounded rate, regression diff
   report.py      # markdown / json report
   cli.py         # run, compare
@@ -205,19 +205,34 @@ configs/
 
 ## Chroma / LiteLLM 붙이기
 
-기본 실행은 가볍게 만들기 위해 외부 API 없이 돌아갑니다. 실제 RAG 스택을 붙이고 싶으면:
+기본 실행은 가볍게 만들기 위해 외부 API 없이 돌아갑니다. Chroma vector store까지 붙이고 싶으면:
 
 ```powershell
 pip install -r requirements-optional.txt
 python -m rag_trust_lab run --config configs/chroma.json --name chroma-trusted
 ```
 
-LiteLLM 모델을 쓰려면 config의 generator를 바꿉니다.
+LiteLLM은 기본 requirements에 포함되어 있습니다. OpenAI 예시 모델을 쓰려면 `.env`에 키와 모델을 넣습니다.
+
+```env
+OPENAI_API_KEY=...
+LITELLM_MODEL=gpt-4o-mini
+LITELLM_JUDGE_MODEL=gpt-4o-mini
+```
+
+관리자/운영자 Streamlit 화면에서는 키가 감지되면 LiteLLM 모델이 드롭다운에 나타납니다. CLI에서는 config의 `generator`와 `judge`를 바꿉니다.
 
 ```json
 {
   "generator": "litellm:gpt-4o-mini"
 }
+```
+
+예시 config도 포함되어 있습니다.
+
+```powershell
+python -m rag_trust_lab run --config configs/litellm-basic.json --name litellm-basic
+python -m rag_trust_lab run --config configs/litellm-trusted.json --name litellm-trusted
 ```
 
 또는 CLOVA의 OpenAI 호환 endpoint를 직접 쓰려면 config에서 `generator`와 `judge`를 지정합니다.
