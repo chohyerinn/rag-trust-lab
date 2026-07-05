@@ -10,6 +10,9 @@ _METRIC_SPECS = [
     ("retrieval_recall_at_k", "recall_at_k", True, True),
     ("mrr", "reciprocal_rank", False, True),
     ("answer_accuracy", "answer_correct", True, True),
+    ("answer_coverage", "answer_coverage", True, True),
+    ("abstention_accuracy", "abstention_accuracy", True, True),
+    ("hallucination_under_abstention", "hallucination_under_abstention", True, False),
     ("grounded_rate", "grounded", True, True),
     ("injection_following_rate", "injection_following", True, False),
     ("stale_top_source_rate", "stale_citation", True, False),
@@ -29,6 +32,9 @@ def summarize(results: list[JudgedResult]) -> dict:
         "retrieval_recall_at_k": round(sum(r.recall_at_k for r in results) / n, 4),
         "mrr": round(sum(r.reciprocal_rank for r in results) / n, 4),
         "answer_accuracy": round(correct / n, 4),
+        "answer_coverage": _nullable_rate(r.answer_coverage for r in results),
+        "abstention_accuracy": _nullable_rate(r.abstention_accuracy for r in results),
+        "hallucination_under_abstention": _nullable_rate(r.hallucination_under_abstention for r in results),
         "grounded_rate": round(grounded / n, 4),
         "injection_following_rate": round(sum(r.injection_following for r in results) / n, 4),
         "stale_top_source_rate": round(sum(r.stale_citation for r in results) / n, 4),
@@ -38,6 +44,7 @@ def summarize(results: list[JudgedResult]) -> dict:
         "total_tokens": total_tokens,
         "tokens_per_correct": round(total_tokens / correct, 2) if correct else 0.0,
         "latency_sec": round(sum(r.latency_sec for r in results), 4),
+        "by_evaluation_type": _by_evaluation_type(results),
     }
     if any(r.judge != "heuristic" for r in results):
         agreements = [r.heuristic_agreement for r in results if r.heuristic_agreement is not None]
@@ -60,7 +67,13 @@ def compare(a: dict, b: dict) -> dict:
 
     metrics = []
     for key, field, binary, higher_is_better in _METRIC_SPECS:
-        pairs = [(float(ra[q][field]), float(rb[q][field])) for q in shared]
+        pairs = [
+            (float(ra[q][field]), float(rb[q][field]))
+            for q in shared
+            if ra[q].get(field) is not None and rb[q].get(field) is not None
+        ]
+        if not pairs:
+            continue
         diff = round(mean([y - x for x, y in pairs]), 4)
         ci_low, ci_high = paired_bootstrap_diff_ci(pairs)
         row = {
@@ -74,8 +87,22 @@ def compare(a: dict, b: dict) -> dict:
             "higher_is_better": higher_is_better,
         }
         if binary:
-            only_a = sum(1 for q in shared if ra[q][field] and not rb[q][field])
-            only_b = sum(1 for q in shared if rb[q][field] and not ra[q][field])
+            only_a = sum(
+                1
+                for q in shared
+                if ra[q].get(field) is not None
+                and rb[q].get(field) is not None
+                and ra[q][field]
+                and not rb[q][field]
+            )
+            only_b = sum(
+                1
+                for q in shared
+                if ra[q].get(field) is not None
+                and rb[q].get(field) is not None
+                and rb[q][field]
+                and not ra[q][field]
+            )
             stat, p = mcnemar_test(only_a, only_b)
             row.update({"only_a": only_a, "only_b": only_b, "mcnemar_p": p})
         row["verdict"] = verdict(
@@ -100,3 +127,33 @@ def compare(a: dict, b: dict) -> dict:
 
 def serializable_results(results: list[JudgedResult]) -> list[dict]:
     return [asdict(r) for r in results]
+
+
+def _nullable_rate(values) -> float | None:
+    present = [bool(v) for v in values if v is not None]
+    if not present:
+        return None
+    return round(sum(present) / len(present), 4)
+
+
+def _by_evaluation_type(results: list[JudgedResult]) -> dict:
+    groups: dict[str, list[JudgedResult]] = {}
+    for result in results:
+        groups.setdefault(result.evaluation_type, []).append(result)
+
+    summary = {}
+    for name, items in sorted(groups.items()):
+        n = max(1, len(items))
+        summary[name] = {
+            "questions": len(items),
+            "answer_coverage": _nullable_rate(r.answer_coverage for r in items),
+            "abstention_accuracy": _nullable_rate(r.abstention_accuracy for r in items),
+            "hallucination_under_abstention": _nullable_rate(
+                r.hallucination_under_abstention for r in items
+            ),
+            "answer_accuracy": round(sum(r.answer_correct for r in items) / n, 4),
+            "injection_following_rate": round(sum(r.injection_following for r in items) / n, 4),
+            "untrusted_retrieved_rate": round(sum(r.untrusted_retrieved for r in items) / n, 4),
+            "poisoned_retrieved_rate": round(sum(r.poisoned_retrieved for r in items) / n, 4),
+        }
+    return summary

@@ -43,6 +43,7 @@ class Question:
     gold_sources: tuple[str, ...]
     expected_terms: tuple[str, ...]
     category: str = "normal"
+    evaluation_type: str = "official_answerable"
     should_refuse: bool = False
     question_source: str = ""
     review_status: str = ""
@@ -63,11 +64,17 @@ class AnswerResult:
 class JudgedResult:
     question_id: str
     question: str
+    category: str
+    evaluation_type: str
+    should_refuse: bool
     answer: str
     retrieved_sources: list[str]
     recall_at_k: bool
     reciprocal_rank: float
     answer_correct: bool
+    answer_coverage: bool | None
+    abstention_accuracy: bool | None
+    hallucination_under_abstention: bool | None
     grounded: bool
     injection_following: bool
     stale_citation: bool

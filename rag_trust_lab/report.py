@@ -27,6 +27,9 @@ def _run_markdown(payload: dict) -> str:
         f"| retrieval recall@k | {pct(m['retrieval_recall_at_k'])} |",
         f"| MRR | {m['mrr']} |",
         f"| answer accuracy | {pct(m['answer_accuracy'])} |",
+        f"| answer coverage | {pct(m.get('answer_coverage'))} |",
+        f"| abstention accuracy | {pct(m.get('abstention_accuracy'))} |",
+        f"| hallucination under abstention | {pct(m.get('hallucination_under_abstention'))} |",
         f"| grounded rate | {pct(m['grounded_rate'])} |",
         f"| injection following rate | {pct(m['injection_following_rate'])} |",
         f"| stale top-source rate | {pct(m['stale_top_source_rate'])} |",
@@ -43,13 +46,14 @@ def _run_markdown(payload: dict) -> str:
         ]
     )
     rows = "\n".join(
-        f"| {r['question_id']} | {yes(r['recall_at_k'])} | {r['reciprocal_rank']} | "
+        f"| {r['question_id']} | {r.get('evaluation_type', '-')} | {yes(r['recall_at_k'])} | {r['reciprocal_rank']} | "
         f"{yes(r['answer_correct'])} | {yes(r['grounded'])} | "
         f"{yes(r['injection_following'])} | {yes(r.get('poisoned_retrieved', False))} | "
         f"{r.get('judge', 'heuristic')} | "
         f"{_agreement_cell(r)} | {', '.join(r['retrieved_sources'][:3])} |"
         for r in payload["results"]
     )
+    type_rows = _evaluation_type_rows(m.get("by_evaluation_type", {}))
     details = "\n\n".join(_answer_detail(r) for r in payload["results"])
     return f"""# RAG trust report: {payload['run_name']}
 
@@ -63,9 +67,15 @@ Config: `{payload['config_name']}` · retriever `{payload['retriever']}` · trus
 
 ## Question-level results
 
-| Question | recall | RR | correct | grounded | injection followed | poison retrieved | judge | h-agree | top sources |
-|---|---:|---:|---:|---:|---:|---:|---|---:|---|
+| Question | type | recall | RR | correct | grounded | injection followed | poison retrieved | judge | h-agree | top sources |
+|---|---|---:|---:|---:|---:|---:|---:|---|---:|---|
 {rows}
+
+## Evaluation-type matrix
+
+| Type | n | coverage | abstention | hallucination on abstain | injection | untrusted retrieved |
+|---|---:|---:|---:|---:|---:|---:|
+{type_rows}
 
 ## Answers and judge notes
 
@@ -111,6 +121,8 @@ def _compare_markdown(payload: dict) -> str:
 
 
 def pct(x: float) -> str:
+    if x is None:
+        return "n/a"
     return f"{x:.0%}"
 
 
@@ -136,6 +148,7 @@ def _answer_detail(row: dict) -> str:
     notes = ", ".join(row.get("notes", [])) or "-"
     return (
         f"### {row['question_id']}\n\n"
+        f"type: `{row.get('evaluation_type', '-')}` · category: `{row.get('category', '-')}`\n\n"
         f"{answer}\n\n"
         f"- judge: `{row.get('judge', 'heuristic')}`\n"
         f"- reason: {reason or '-'}\n"
@@ -146,3 +159,19 @@ def _answer_detail(row: dict) -> str:
 
 def _quote(text: str) -> str:
     return "\n".join(f"> {line}" if line else ">" for line in str(text).splitlines())
+
+
+def _evaluation_type_rows(groups: dict) -> str:
+    if not groups:
+        return "| - | 0 | n/a | n/a | n/a | n/a | n/a |"
+    rows = []
+    for name, values in groups.items():
+        rows.append(
+            f"| {name} | {values['questions']} | "
+            f"{pct(values.get('answer_coverage'))} | "
+            f"{pct(values.get('abstention_accuracy'))} | "
+            f"{pct(values.get('hallucination_under_abstention'))} | "
+            f"{pct(values.get('injection_following_rate'))} | "
+            f"{pct(values.get('untrusted_retrieved_rate'))} |"
+        )
+    return "\n".join(rows)

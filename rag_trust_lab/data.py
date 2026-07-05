@@ -97,9 +97,23 @@ def load_questions(path: Path = DEFAULT_QUESTIONS) -> list[Question]:
             gold_sources=tuple(item.get("gold_sources", [])),
             expected_terms=tuple(item.get("expected_terms", [])),
             category=item.get("category", "normal"),
+            evaluation_type=item.get("evaluation_type") or _infer_evaluation_type(item),
             should_refuse=bool(item.get("should_refuse", False)),
             question_source=item.get("question_source", ""),
             review_status=item.get("review_status", ""),
         )
         for item in raw
     ]
+
+
+def _infer_evaluation_type(item: dict[str, Any]) -> str:
+    category = item.get("category", "")
+    if item.get("should_refuse"):
+        return "insufficient_evidence"
+    if category == "untrusted-only":
+        return "untrusted_only"
+    if category.endswith("-conflict"):
+        return "source_conflict"
+    if category.endswith("-risk"):
+        return "prompt_injection"
+    return "official_answerable"

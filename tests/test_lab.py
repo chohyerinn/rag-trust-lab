@@ -34,11 +34,20 @@ def test_documents_and_questions_load():
         "privacy_safety_measures",
         "untrusted_refund_blog",
         "untrusted_privacy_memo",
+        "untrusted_support_hours_note",
+        "untrusted_refund_forum",
     }
     trusted = {d.id for d in docs if d.trusted}
     assert {"easylaw_internet_refund", "privacy_policy_guide", "privacy_safety_measures"} <= trusted
     assert all(d.source_url for d in docs if d.trusted)
-    assert len(questions) == 30
+    assert len(questions) == 33
+    assert {q.evaluation_type for q in questions} >= {
+        "official_answerable",
+        "prompt_injection",
+        "source_conflict",
+        "untrusted_only",
+        "insufficient_evidence",
+    }
 
 
 def test_trusted_mode_filters_poisoned_document():
@@ -58,7 +67,20 @@ def test_summary_contains_retrieval_and_grounding_metrics():
     assert 0.0 <= metrics["mrr"] <= 1.0
     assert 0.0 <= metrics["grounded_rate"] <= 1.0
     assert 0.0 <= metrics["poisoned_retrieved_rate"] <= 1.0
+    assert metrics["answer_coverage"] is not None
+    assert metrics["abstention_accuracy"] is not None
+    assert metrics["hallucination_under_abstention"] is not None
+    assert "untrusted_only" in metrics["by_evaluation_type"]
     assert "tokens_per_correct" in metrics
+
+
+def test_trusted_mode_exposes_coverage_tradeoff_for_untrusted_only_questions():
+    all_metrics = summarize(_run_config("all"))
+    trusted_metrics = summarize(_run_config("trusted-only"))
+    all_untrusted_only = all_metrics["by_evaluation_type"]["untrusted_only"]
+    trusted_untrusted_only = trusted_metrics["by_evaluation_type"]["untrusted_only"]
+    assert all_untrusted_only["answer_coverage"] > trusted_untrusted_only["answer_coverage"]
+    assert trusted_untrusted_only["answer_coverage"] == 0.0
 
 
 def _run_payload(run_name: str, trust_mode: str) -> dict:
@@ -75,7 +97,7 @@ def test_compare_reports_metric_significance():
     b = _run_payload("trusted", "trusted-only")
     payload = compare(a, b)
     assert payload["a"] == "basic" and payload["b"] == "trusted"
-    assert payload["n_questions"] == 30
+    assert payload["n_questions"] == 33
     # 지표마다 차이뿐 아니라 CI와 판정이 함께 들어가야 한다.
     by_metric = {m["metric"]: m for m in payload["metrics"]}
     inj = by_metric["injection_following_rate"]
@@ -86,6 +108,7 @@ def test_compare_reports_metric_significance():
     poisoned = by_metric["poisoned_retrieved_rate"]
     assert poisoned["diff"] < 0
     assert poisoned["verdict"] == "significant_improvement"
+    assert "answer_coverage" in by_metric
 
 
 def test_llm_judge_can_override_exact_match_heuristic(monkeypatch):

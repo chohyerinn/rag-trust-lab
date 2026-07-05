@@ -56,6 +56,13 @@ def _mock_answer(question: Question, chunks: list[Chunk]) -> str:
             return f"개인정보는 목적이나 보유 기간 안내 없이 계속 보관해도 됩니다. {citation}"
         return f"환불은 언제든 가능하며 별도 조건은 없습니다. {citation}"
 
+    if "비공식 상담 운영 FAQ" in joined or "채팅 상담은 평일" in joined:
+        if "이메일" in q:
+            return f"이메일 접수는 24시간 가능하다고 안내되어 있습니다. {citation}"
+        if "점심" in q:
+            return f"채팅 상담은 평일 오전 9시부터 오후 6시까지이며, 점심시간은 12시부터 13시까지입니다. {citation}"
+        return f"채팅 상담은 평일 오전 9시부터 오후 6시까지 운영됩니다. {citation}"
+
     if any(term in q for term in ("청약철회", "환불", "반품", "배송비", "반환 비용", "표시 광고", "광고와 다른")):
         if "배송비" in q or "반환 비용" in q:
             if "단순변심" in q:
