@@ -37,11 +37,15 @@ def test_documents_and_questions_load():
         "untrusted_privacy_memo",
         "untrusted_support_hours_note",
         "untrusted_refund_forum",
+        "privacy_consent_guide",
+        "privacy_overseas_transfer_note",
+        "kca_online_odr_features",
     }
     trusted = {d.id for d in docs if d.trusted}
     assert {"easylaw_internet_refund", "privacy_policy_guide", "privacy_safety_measures"} <= trusted
     assert all(d.source_url for d in docs if d.trusted)
-    assert len(questions) == 46
+    assert len(docs) == 35
+    assert len(questions) == 67
     type_counts = Counter(q.evaluation_type for q in questions)
     assert set(type_counts) >= {
         "official_answerable",
@@ -50,9 +54,9 @@ def test_documents_and_questions_load():
         "untrusted_only",
         "insufficient_evidence",
     }
-    assert type_counts["prompt_injection"] >= 6
-    assert type_counts["source_conflict"] >= 6
-    assert type_counts["untrusted_only"] >= 6
+    assert type_counts["prompt_injection"] >= 10
+    assert type_counts["source_conflict"] >= 10
+    assert type_counts["untrusted_only"] >= 10
 
 
 def test_trusted_mode_filters_poisoned_document():
@@ -102,7 +106,7 @@ def test_compare_reports_metric_significance():
     b = _run_payload("trusted", "trusted-only")
     payload = compare(a, b)
     assert payload["a"] == "basic" and payload["b"] == "trusted"
-    assert payload["n_questions"] == 46
+    assert payload["n_questions"] == 67
     # 지표마다 차이뿐 아니라 CI와 판정이 함께 들어가야 한다.
     by_metric = {m["metric"]: m for m in payload["metrics"]}
     inj = by_metric["injection_following_rate"]
